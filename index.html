@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>House of Madese | 3D-Printed Decor & Collectibles — Made in India</title>
+<title>House of Madese | 3D-Printed Decor &amp; Collectibles — Made in India</title>
 <meta name="description" content="Bold 3D-printed lamps, Freedom Series collectibles and desk gear. Designed, printed and hand-finished in Ichalkaranji, India. Layer by layer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Space+Grotesk:wght@400;500;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script><script src="https://cdn.razorpay.com/static/cx/razorpay-risk-detection/bundle.js" async=""></script>
 <style>
 :root{
   --paper:#FAFAF7; --ink:#16150F; --molten:#FF5A1F; --signal:#2B4BFF; --marigold:#FFD23F;
@@ -231,42 +230,57 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
 </head>
 <body>
 
-<div class="marquee" aria-hidden="true"><div class="marquee-track" id="marqueeTrack"></div></div>
+<div class="marquee" aria-hidden="true"><div class="marquee-track" id="marqueeTrack"><span>🔥 LAUNCH OFFER — FLAT 20% OFF · CODE: <b>FIRSTLAYER</b></span><span>⚡ MADE IN INDIA. LAYER BY LAYER.</span><span>📦 SHIPS IN 48 HOURS</span><span>💬 ORDER HELP ON WHATSAPP</span><span>🔥 LAUNCH OFFER — FLAT 20% OFF · CODE: <b>FIRSTLAYER</b></span><span>⚡ MADE IN INDIA. LAYER BY LAYER.</span><span>📦 SHIPS IN 48 HOURS</span><span>💬 ORDER HELP ON WHATSAPP</span></div></div>
 
 <nav>
   <div class="wrap nav-in">
-    <a class="logo" href="#top" id="logoTop"></a>
-    <div class="nav-links" id="navLinks"></div>
+    <a class="logo" href="#top" id="logoTop">House of <em>Madese</em></a>
+    <div class="nav-links" id="navLinks"><a href="#drops">New Drops</a><a href="#collections">Collections</a><a href="#story">Our Story</a><a href="#process">Process</a><a href="#contact">Contact</a></div>
     <div style="display:flex;gap:10px;align-items:center">
       <button class="cart-btn" onclick="toggleCart(true)">Cart <span class="cart-count" id="cartCount">0</span></button>
-      <button class="burger" onclick="document.getElementById('mMenu').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+      <button class="burger" onclick="document.getElementById('mMenu').classList.toggle('open')" aria-label="Menu">☰</button>
     </div>
   </div>
-  <div class="mobile-menu" id="mMenu"></div>
+  <div class="mobile-menu" id="mMenu"><a href="#drops" onclick="document.getElementById('mMenu').classList.remove('open')">New Drops</a><a href="#collections" onclick="document.getElementById('mMenu').classList.remove('open')">Collections</a><a href="#story" onclick="document.getElementById('mMenu').classList.remove('open')">Our Story</a><a href="#process" onclick="document.getElementById('mMenu').classList.remove('open')">Process</a><a href="#contact" onclick="document.getElementById('mMenu').classList.remove('open')">Contact</a></div>
 </nav>
 
 <header class="hero" id="top">
   <div class="hero-in">
     <div class="hero-copy">
-      <span class="eyebrow" id="heroEyebrow"></span>
-      <h1 class="display" id="heroTitle"></h1>
-      <p class="hero-sub" id="heroSub"></p>
+      <span class="eyebrow" id="heroEyebrow">Ichalkaranji, Maharashtra · Est. 2025</span>
+      <h1 class="display" id="heroTitle">Printed.<br><span class="stripe">Not Manufactured.</span></h1>
+      <p class="hero-sub" id="heroSub">Bold lamps, desk gear and collectibles — designed on screen, grown layer by layer on our print farm, and hand-finished before they reach your door. No factory. No middlemen. Just hot plastic and stubborn standards.</p>
       <div class="hero-cta">
-        <a class="btn btn-solid" href="#drops" id="heroCta1"></a>
-        <a class="btn btn-ghost" href="#collections" id="heroCta2"></a>
+        <a class="btn btn-solid" href="#drops" id="heroCta1">Shop New Drops</a>
+        <a class="btn btn-ghost" href="#collections" id="heroCta2">Collections ↗</a>
       </div>
     </div>
     <div class="hero-art" id="heroArt">
-      <div class="ph" id="heroPh"></div>
-      <div class="now-printing mono" id="nowPrinting"></div>
+      <div class="ph" id="heroPh"><div class="ph-label">PHOTO SLOT — HERO: your best lamp shade, lit, dark table, vertical crop.</div></div>
+      <div class="now-printing mono" id="nowPrinting">NOW PRINTING: <b>HALO VORONOI · 62%</b> · PETG · 0.2MM</div>
     </div>
   </div>
 </header>
 
 <section id="collections">
   <div class="wrap">
-    <div class="sec-head"><h2 class="display" id="colTitle"></h2><p id="colSub"></p></div>
-    <div class="collections" id="collectionGrid"></div>
+    <div class="sec-head"><h2 class="display" id="colTitle">Pick Your Poison</h2><p id="colSub">Three lines. One printer that never sleeps. Every collection has a name, a story, and zero boring pieces.</p></div>
+    <div class="collections" id="collectionGrid">
+    <a class="col-card" href="#drops" onclick="setFilter(SITE.collections[0].name)">
+      <div class="bg" style="background:repeating-linear-gradient(0deg, #2B4BFF 0 12px, #2B4BFFcc 12px 24px)"></div>
+      <div class="ph-label">PHOTO — Gandhi + Ambedkar figures together, eye level</div>
+      <div class="col-meta"><small>Collection 01 — Collectibles</small><div class="display">Freedom Series</div></div>
+    </a>
+    <a class="col-card" href="#drops" onclick="setFilter(SITE.collections[1].name)">
+      <div class="bg" style="background:repeating-linear-gradient(0deg, #FF5A1F 0 12px, #FF5A1Fcc 12px 24px)"></div>
+      <div class="ph-label">PHOTO — Lamp glowing in a dark room, warm bulb</div>
+      <div class="col-meta"><small>Collection 02 — Light</small><div class="display">Glow Theory</div></div>
+    </a>
+    <a class="col-card" href="#drops" onclick="setFilter(SITE.collections[2].name)">
+      <div class="bg" style="background:repeating-linear-gradient(0deg, #FFD23F 0 12px, #FFD23Fcc 12px 24px)"></div>
+      <div class="ph-label">PHOTO — Pen stand + MagSafe stand on a real desk</div>
+      <div class="col-meta"><small>Collection 03 — Desk</small><div class="display">Desk Rebellion</div></div>
+    </a></div>
   </div>
 </section>
 
@@ -274,46 +288,112 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
 
 <section id="drops">
   <div class="wrap">
-    <div class="sec-head"><h2 class="display" id="dropsTitle"></h2><p id="dropsSub"></p></div>
-    <div class="filter-row" id="filterRow"></div>
-    <div class="grid" id="productGrid"></div>
+    <div class="sec-head"><h2 class="display" id="dropsTitle">New Drops</h2><p id="dropsSub">Small batches. When a drop sells out, the printer queues the next one. Good things take layers.</p></div>
+    <div class="filter-row" id="filterRow"><button class="filter-btn active" onclick="setFilter('All')">All</button><button class="filter-btn " onclick="setFilter(SITE.collections[0].name)">Freedom Series</button><button class="filter-btn " onclick="setFilter(SITE.collections[1].name)">Glow Theory</button><button class="filter-btn " onclick="setFilter(SITE.collections[2].name)">Desk Rebellion</button></div>
+    <div class="grid" id="productGrid"><article class="card">
+      <div class="card-img" onclick="openPdp('halo-voronoi')" style="">
+        <span class="save-tag">SAVE 23%</span>
+        <span class="series-tag">Glow Theory</span>
+        <div class="ph-label">PHOTO: lamp ON in dark room</div>
+      </div>
+      <div class="card-body">
+        <h3 onclick="openPdp('halo-voronoi')">Halo Voronoi Lamp Shade</h3>
+        <div class="specs"><span class="chip">PETG</span><span class="chip">B22 fit</span><span class="chip">Ø165mm</span></div>
+        <div class="price-row"><span class="price">₹999</span><span class="strike">₹1,299</span></div>
+        <button class="add-btn" onclick="addToCart('halo-voronoi')">Add to Queue +</button>
+      </div></article><article class="card">
+      <div class="card-img" onclick="openPdp('mahatma')" style="">
+        <span class="save-tag">SAVE 22%</span>
+        <span class="series-tag">Freedom Series</span>
+        <div class="ph-label">PHOTO: 3/4 angle, plain background</div>
+      </div>
+      <div class="card-body">
+        <h3 onclick="openPdp('mahatma')">The Mahatma — Freedom Series 01</h3>
+        <div class="specs"><span class="chip">PLA+</span><span class="chip">120mm tall</span><span class="chip">Hand-finished</span></div>
+        <div class="price-row"><span class="price">₹699</span><span class="strike">₹899</span></div>
+        <button class="add-btn" onclick="addToCart('mahatma')">Add to Queue +</button>
+      </div></article><article class="card">
+      <div class="card-img" onclick="openPdp('architect')" style="">
+        <span class="save-tag">SAVE 22%</span>
+        <span class="series-tag">Freedom Series</span>
+        <div class="ph-label">PHOTO: same setup as Mahatma</div>
+      </div>
+      <div class="card-body">
+        <h3 onclick="openPdp('architect')">The Architect — Freedom Series 02</h3>
+        <div class="specs"><span class="chip">PLA+</span><span class="chip">120mm tall</span><span class="chip">Hand-finished</span></div>
+        <div class="price-row"><span class="price">₹699</span><span class="strike">₹899</span></div>
+        <button class="add-btn" onclick="addToCart('architect')">Add to Queue +</button>
+      </div></article><article class="card">
+      <div class="card-img" onclick="openPdp('desk-rebel')" style="">
+        <span class="save-tag">SAVE 20%</span>
+        <span class="series-tag">Desk Rebellion</span>
+        <div class="ph-label">PHOTO: on a real desk, pens in</div>
+      </div>
+      <div class="card-body">
+        <h3 onclick="openPdp('desk-rebel')">Desk Rebel Pen Stand</h3>
+        <div class="specs"><span class="chip">PETG</span><span class="chip">Weighted base</span><span class="chip">Fits 12+ pens</span></div>
+        <div class="price-row"><span class="price">₹399</span><span class="strike">₹499</span></div>
+        <button class="add-btn" onclick="addToCart('desk-rebel')">Add to Queue +</button>
+      </div></article><article class="card">
+      <div class="card-img" onclick="openPdp('grip-halo')" style="">
+        <span class="save-tag">SAVE 21%</span>
+        <span class="series-tag">Desk Rebellion</span>
+        <div class="ph-label">PHOTO: phone mounted, screen on</div>
+      </div>
+      <div class="card-body">
+        <h3 onclick="openPdp('grip-halo')">Grip Halo MagSafe Stand</h3>
+        <div class="specs"><span class="chip">PETG</span><span class="chip">MagSafe</span><span class="chip">60° tilt</span></div>
+        <div class="price-row"><span class="price">₹549</span><span class="strike">₹699</span></div>
+        <button class="add-btn" onclick="addToCart('grip-halo')">Add to Queue +</button>
+      </div></article><article class="card">
+      <div class="card-img" onclick="openPdp('facet-wall')" style="">
+        <span class="save-tag">SAVE 19%</span>
+        <span class="series-tag">Glow Theory</span>
+        <div class="ph-label">PHOTO: mounted on colored wall</div>
+      </div>
+      <div class="card-body">
+        <h3 onclick="openPdp('facet-wall')">Facet Wall Art — Set of 3</h3>
+        <div class="specs"><span class="chip">PETG</span><span class="chip">Set of 3</span><span class="chip">Tape-mount</span></div>
+        <div class="price-row"><span class="price">₹1,299</span><span class="strike">₹1,599</span></div>
+        <button class="add-btn" onclick="addToCart('facet-wall')">Add to Queue +</button>
+      </div></article></div>
   </div>
 </section>
 
 <section class="story" id="story">
   <div class="wrap story-in">
     <div>
-      <span class="mono" id="storyEyebrow"></span>
-      <h2 class="display" id="storyTitle"></h2>
-      <p id="storyText"></p>
+      <span class="mono" id="storyEyebrow">Our Story</span>
+      <h2 class="display" id="storyTitle">One printer.<br>One town.<br><span>Zero chill.</span></h2>
+      <p id="storyText">House of Madese started in Ichalkaranji — a textile town that's been making things for a century — with one 3D printer and the idea that Indian homes deserve objects with actual personality. We design everything ourselves, print in tough PETG, and hand-finish every single piece. GST-registered, Udyam-registered, and unreasonably obsessed with layer quality.</p>
     </div>
-    <div class="story-stats" id="storyStats"></div>
+    <div class="story-stats" id="storyStats"><div class="stat"><div class="display">100%</div><small>Designed &amp; printed in India</small></div><div class="stat"><div class="display">48 HR</div><small>Dispatch on in-stock drops</small></div><div class="stat"><div class="display">0.2MM</div><small>Layer height. We check every one.</small></div><div class="stat"><div class="display">7-DAY</div><small>Replacement, no drama</small></div></div>
   </div>
 </section>
 
 <section id="process">
   <div class="wrap">
-    <div class="sec-head"><h2 class="display" id="processTitle"></h2><p id="processSub"></p></div>
-    <div class="process" id="processGrid"></div>
+    <div class="sec-head"><h2 class="display" id="processTitle">How A Madese Piece Is Born</h2><p id="processSub">Not a factory line. A pipeline we built ourselves — and we'll happily show you the messy middle on Instagram.</p></div>
+    <div class="process" id="processGrid"><div class="step"><span class="mono">Step 01 / Design</span><h3>Sketched in CAD</h3><p>Every piece starts as parametric geometry we model in-house. If it looks like everything else on Amazon, it gets deleted.</p></div><div class="step"><span class="mono">Step 02 / Slice</span><h3>Sliced &amp; tuned</h3><p>Wall counts, infill, supports — tuned per product so it's strong where it matters and light where it doesn't.</p></div><div class="step"><span class="mono">Step 03 / Print</span><h3>Grown layer by layer</h3><p>Printed in PETG on our farm. Hours per piece. The layer lines aren't a flaw — they're the signature.</p></div><div class="step"><span class="mono">Step 04 / Finish</span><h3>Hand-finished</h3><p>Deburred, checked, and packed by an actual human in Ichalkaranji who will take it personally if it arrives ugly.</p></div></div>
   </div>
 </section>
 
 <div class="layer-divider"></div>
 
-<section id="quotesSection">
+<section id="quotesSection" style="display: none;">
   <div class="wrap">
     <div class="sec-head"><h2 class="display" id="quotesTitle"></h2><p id="quotesSub"></p></div>
     <div class="quotes" id="quoteGrid"></div>
   </div>
 </section>
 
-<section style="padding-top:0"><div class="wrap"><div class="badges" id="badgeGrid"></div></div></section>
+<section style="padding-top:0"><div class="wrap"><div class="badges" id="badgeGrid"><div class="badge"><div class="dot"></div><div class="display">Made in India</div><small>Designed &amp; printed in Ichalkaranji. Filament to finish.</small></div><div class="badge"><div class="dot"></div><div class="display">Ships in 48 Hrs</div><small>In-stock drops dispatch within two working days.</small></div><div class="badge"><div class="dot"></div><div class="display">UPI · Cards</div><small>Pay how you like. Secured by Razorpay.</small></div><div class="badge"><div class="dot"></div><div class="display">7-Day Replacement</div><small>Damaged in transit? We reprint and reship. Done.</small></div></div></div></section>
 
 <section class="newsletter">
   <div class="wrap newsletter-in">
-    <h2 class="display" id="nlTitle"></h2>
+    <h2 class="display" id="nlTitle">Join The Print Queue</h2>
     <form class="nl-form" onsubmit="event.preventDefault();alert('Connect this to your email tool later — for now, ask customers to WhatsApp you.');">
-      <input type="email" placeholder="you@email.com" required aria-label="Email">
+      <input type="email" placeholder="you@email.com" required="" aria-label="Email">
       <button class="btn btn-solid" type="submit">Sign up</button>
     </form>
   </div>
@@ -321,18 +401,18 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
 
 <footer id="contact">
   <div class="wrap">
-    <div class="foot-grid" id="footGrid"></div>
-    <div class="foot-legal"><span id="footLegal"></span><span class="mono" id="footTag"></span></div>
+    <div class="foot-grid" id="footGrid"><div class="foot-brand"><a class="logo" href="#top" style="color:var(--paper)">House of <em>Madese</em></a><p>3D-printed decor and collectibles from Ichalkaranji, Maharashtra. GST &amp; Udyam registered MSME.</p></div><div><h4>Shop</h4><a href="#drops">New Drops</a><a href="#collections">Collections</a><a href="#story">Our Story</a></div><div><h4>Info</h4><a href="javascript:void(0)" onclick="openPolicy('shipping')">Shipping &amp; Returns</a><a href="javascript:void(0)" onclick="openPolicy('returns')">Replacement Policy</a><a href="javascript:void(0)" onclick="openPolicy('privacy')">Privacy Policy</a><a href="javascript:void(0)" onclick="openPolicy('terms')">Terms</a></div><div><h4>Reach Us</h4><a href="#">Instagram</a><a href="#">Amazon Storefront</a><a href="mailto:hello@houseofmadese.in">Email us</a></div></div>
+    <div class="foot-legal"><span id="footLegal">© 2026 House of Madese · Ichalkaranji, MH</span><span class="mono" id="footTag">EVERY LAYER COUNTS.</span></div>
   </div>
 </footer>
 
-<a class="wa-float" id="waFloat" target="_blank" rel="noopener">&#128172; WhatsApp us</a>
-<button class="admin-fab" onclick="openAdmin()" title="Owner login">&#9881; Admin</button>
+<a class="wa-float" id="waFloat" target="_blank" rel="noopener" href="https://wa.me/91XXXXXXXXXX?text=Hi%20Madese!">💬 WhatsApp us</a>
+<button class="admin-fab" onclick="openAdmin()" title="Owner login">⚙ Admin</button>
 
 <!-- ══ POLICY PAGE MODAL ══ -->
 <div class="policy-overlay" id="policyOverlay" onclick="if(event.target===this)closePolicy()">
   <div class="policy-box">
-    <button class="policy-close" onclick="closePolicy()" aria-label="Close">&times;</button>
+    <button class="policy-close" onclick="closePolicy()" aria-label="Close">×</button>
     <h2 id="policyTitle"></h2>
     <div class="policy-body" id="policyBody"></div>
   </div>
@@ -341,7 +421,7 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
 <!-- ══ PRODUCT DETAIL MODAL ══ -->
 <div class="pdp-overlay" id="pdpOverlay" onclick="if(event.target===this)closePdp()">
   <div class="pdp">
-    <button class="pdp-close" onclick="closePdp()" aria-label="Close">&times;</button>
+    <button class="pdp-close" onclick="closePdp()" aria-label="Close">×</button>
     <div class="pdp-grid">
       <div class="pdp-gallery">
         <div class="pdp-main-img" id="pdpMain"></div>
@@ -357,13 +437,13 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
 <aside class="drawer" id="drawer" aria-label="Shopping cart">
   <div class="drawer-head">
     <h3 id="cartTitle">Your Queue</h3>
-    <button class="drawer-close" onclick="toggleCart(false)" aria-label="Close cart">&times;</button>
+    <button class="drawer-close" onclick="toggleCart(false)" aria-label="Close cart">×</button>
   </div>
-  <div class="drawer-items" id="cartItems"></div>
+  <div class="drawer-items" id="cartItems"><div class="empty-cart">Queue's empty.<br>Feed the printer. 🖨️</div></div>
   <div class="drawer-foot" id="cartFoot">
-    <div class="total-row"><span>Total</span><span id="cartTotal">&#8377;0</span></div>
+    <div class="total-row"><span>Total</span><span id="cartTotal">₹0</span></div>
     <button class="btn btn-solid" style="justify-content:center" onclick="showCheckoutForm()">Checkout</button>
-    <div class="pay-note">UPI &middot; Cards &middot; Netbanking &mdash; secured by Razorpay</div>
+    <div class="pay-note">UPI · Cards · Netbanking — secured by Razorpay</div>
   </div>
   <div class="drawer-foot hidden" id="checkoutForm" style="overflow-y:auto;max-height:70%">
     <div class="field"><label>Your name</label><input id="coName" placeholder="Full name"></div>
@@ -373,25 +453,25 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
     <div class="field"><label>Payment method</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;border:2px solid var(--ink);border-radius:9px;padding:9px 14px;cursor:pointer;flex:1;justify-content:center">
-          <input type="radio" name="payMethod" value="online" checked onchange="updatePayBtn()"> Pay Online
+          <input type="radio" name="payMethod" value="online" checked="" onchange="updatePayBtn()"> Pay Online
         </label>
         <label style="display:flex;align-items:center;gap:6px;border:2px solid var(--ink);border-radius:9px;padding:9px 14px;cursor:pointer;flex:1;justify-content:center">
           <input type="radio" name="payMethod" value="cod" onchange="updatePayBtn()"> Cash on Delivery
         </label>
       </div>
     </div>
-    <button class="btn btn-solid" style="justify-content:center" id="payBtn" onclick="payNow(this)">Pay <span id="payAmt"></span> with Razorpay</button>
+    <button class="btn btn-solid" style="justify-content:center" id="payBtn" onclick="payNow(this)">Pay <span id="payAmt">₹0</span> with Razorpay</button>
     <div class="pay-note" id="codNote" style="display:none">We'll confirm your order on WhatsApp before it goes to print. Pay the courier in cash on delivery.</div>
-    <button class="btn btn-small" onclick="hideCheckoutForm()">&larr; Back to cart</button>
+    <button class="btn btn-small" onclick="hideCheckoutForm()">← Back to cart</button>
   </div>
 </aside>
 
 <!-- ══ ADMIN PANEL ══ -->
 <div class="admin hidden" id="adminPanel">
-  <div id="adminLogin">
+  <div id="adminLogin" class="hidden">
     <div class="login-box">
       <h2>Owner Login</h2>
-      <div id="loginLocal">
+      <div id="loginLocal" class="">
         <div class="field"><label>Admin password</label><input type="password" id="adminPass" placeholder="Password"></div>
         <button class="btn btn-solid" style="width:100%;justify-content:center" onclick="tryLocalLogin()">Log in</button>
       </div>
@@ -400,124 +480,464 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
         <div class="field"><label>Password</label><input type="password" id="supaPass" placeholder="Password"></div>
         <button class="btn btn-solid" style="width:100%;justify-content:center" onclick="trySupaLogin()">Log in</button>
       </div>
-      <div class="note" id="loginNote"></div>
+      <div class="note" id="loginNote">Password login (works even before Supabase is connected).</div>
       <button class="btn btn-small" style="margin-top:10px;width:100%;justify-content:center" onclick="toggleLoginMode()">Switch login method</button>
-      <button class="btn btn-small" style="margin-top:10px" onclick="closeAdmin()">&larr; Back to store</button>
+      <button class="btn btn-small" style="margin-top:10px" onclick="closeAdmin()">← Back to store</button>
     </div>
   </div>
 
-  <div id="adminMain" class="hidden">
+  <div id="adminMain" class="">
     <div class="admin-top">
       <span class="logo">MADESE <em>ADMIN</em></span>
       <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="products" onclick="showTab('products')">Products</button>
+        <button class="admin-tab" data-tab="products" onclick="showTab('products')">Products</button>
         <button class="admin-tab" data-tab="collections" onclick="showTab('collections')">Collections</button>
         <button class="admin-tab" data-tab="content" onclick="showTab('content')">Content</button>
         <button class="admin-tab" data-tab="orders" onclick="showTab('orders')">Orders</button>
-        <button class="admin-tab" data-tab="settings" onclick="showTab('settings')">Settings</button>
+        <button class="admin-tab active" data-tab="settings" onclick="showTab('settings')">Settings</button>
       </div>
       <button class="icon-btn" onclick="closeAdmin()">Exit</button>
     </div>
     <div class="admin-body">
-      <div id="tab-products"></div>
+      <div id="tab-products" class="hidden"><div class="admin-card"><h3>Products (6)</h3>
+      <div class="admin-row">
+        <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:220px">
+          <div class="mini-img" style=""></div>
+          <div><b>Halo Voronoi Lamp Shade</b><div class="meta">Glow Theory · ₹999 <s>₹1,299</s></div></div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editProduct(0)">Edit</button>
+          <button class="icon-btn danger" onclick="deleteProduct(0)">Delete</button>
+        </div>
+      </div>
+      <div class="admin-row">
+        <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:220px">
+          <div class="mini-img" style=""></div>
+          <div><b>The Mahatma — Freedom Series 01</b><div class="meta">Freedom Series · ₹699 <s>₹899</s></div></div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editProduct(1)">Edit</button>
+          <button class="icon-btn danger" onclick="deleteProduct(1)">Delete</button>
+        </div>
+      </div>
+      <div class="admin-row">
+        <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:220px">
+          <div class="mini-img" style=""></div>
+          <div><b>The Architect — Freedom Series 02</b><div class="meta">Freedom Series · ₹699 <s>₹899</s></div></div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editProduct(2)">Edit</button>
+          <button class="icon-btn danger" onclick="deleteProduct(2)">Delete</button>
+        </div>
+      </div>
+      <div class="admin-row">
+        <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:220px">
+          <div class="mini-img" style=""></div>
+          <div><b>Desk Rebel Pen Stand</b><div class="meta">Desk Rebellion · ₹399 <s>₹499</s></div></div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editProduct(3)">Edit</button>
+          <button class="icon-btn danger" onclick="deleteProduct(3)">Delete</button>
+        </div>
+      </div>
+      <div class="admin-row">
+        <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:220px">
+          <div class="mini-img" style=""></div>
+          <div><b>Grip Halo MagSafe Stand</b><div class="meta">Desk Rebellion · ₹549 <s>₹699</s></div></div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editProduct(4)">Edit</button>
+          <button class="icon-btn danger" onclick="deleteProduct(4)">Delete</button>
+        </div>
+      </div>
+      <div class="admin-row">
+        <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:220px">
+          <div class="mini-img" style=""></div>
+          <div><b>Facet Wall Art — Set of 3</b><div class="meta">Glow Theory · ₹1,299 <s>₹1,599</s></div></div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editProduct(5)">Edit</button>
+          <button class="icon-btn danger" onclick="deleteProduct(5)">Delete</button>
+        </div>
+      </div></div><button class="btn btn-solid btn-small" onclick="editProduct(-1)">+ Add product</button>
+     <div id="productForm"></div></div>
       <div id="tab-collections" class="hidden"></div>
       <div id="tab-content" class="hidden"></div>
       <div id="tab-orders" class="hidden"></div>
-      <div id="tab-settings" class="hidden"></div>
+      <div id="tab-settings" class="">
+  <div class="admin-card"><h3>Payments (Razorpay)</h3>
+    <div class="note blue">Your Razorpay keys live safely in <b>Vercel</b>, not in this file. In Vercel → Project → Settings → Environment Variables, add:<br>
+    • <code class="k">RAZORPAY_KEY_ID</code> = your rzp_test_… (later rzp_live_…) key<br>
+    • <code class="k">RAZORPAY_KEY_SECRET</code> = the secret shown next to it<br>
+    The full checklist file walks you through it. Nothing to enter here.</div></div>
+  <div class="admin-card"><h3>⚠️ After changing any PRICE</h3>
+    <div class="note">Prices are verified on the server from a file called <code class="k">products.json</code>. When you change a price here, you must also update that one number in <code class="k">products.json</code> and re-upload it, or checkout will charge the old price. The checklist explains this — it's one line per product.</div>
+    <button class="icon-btn" onclick="showPriceSync()">Show me the current products.json</button>
+    <div id="priceSyncBox"></div></div>
+  <div class="admin-card"><h3>Contact</h3>
+    <div class="field"><label>WhatsApp number (digits only, with 91)</label><input id="st_wa" value="91XXXXXXXXXX"></div>
+    <div class="field"><label>Email</label><input id="st_email" value="hello@houseofmadese.in"></div></div>
+  <div class="admin-card"><h3>Admin security</h3>
+    <div class="field"><label>Admin password (used only until Supabase login is connected)</label><input id="st_pass" value="madese123"></div>
+    <div class="field"><label>Supabase Project URL (for reading orders)</label><input id="st_surl" value="" placeholder="https://xxxx.supabase.co"></div>
+    <div class="field"><label>Supabase anon public key (for reading orders)</label><input id="st_skey" value="" placeholder="eyJ..."></div>
+    <div class="note">Fill these two after the Supabase setup in the Orders tab. Once published, admin login switches to your Supabase email + password.</div></div>
+  <button class="btn btn-solid btn-small" onclick="saveSettings()">Save settings</button></div>
     </div>
     <div class="publish-bar">
-      <span class="mono" id="draftStatus">No unpublished changes</span>
+      <span class="mono" id="draftStatus">Unpublished changes — visitors won't see them until you Publish + upload</span>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="icon-btn" onclick="previewDraft()">Preview site</button>
-        <button class="btn btn-solid btn-small" onclick="publishSite()">Publish &darr; Download updated site</button>
+        <button class="btn btn-solid btn-small" onclick="publishSite()">Publish ↓ Download updated site</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- ══ SITE DATA — the admin edits this; publish bakes it back in ══ -->
-<script type="application/json" id="SITE_DATA">
-{
-  "brand": { "name": "House of", "accent": "Madese", "city": "Ichalkaranji, MH",
-    "whatsapp": "91XXXXXXXXXX", "email": "hello@houseofmadese.in",
-    "tagline": "3D-printed decor and collectibles from Ichalkaranji, Maharashtra. GST & Udyam registered MSME." },
-  "marquee": [
-    "🔥 LAUNCH OFFER — FLAT 20% OFF · CODE: <b>FIRSTLAYER</b>",
-    "⚡ MADE IN INDIA. LAYER BY LAYER.",
-    "📦 SHIPS IN 48 HOURS",
-    "💬 ORDER HELP ON WHATSAPP" ],
-  "nav": [
-    { "label": "New Drops", "href": "#drops" },
-    { "label": "Collections", "href": "#collections" },
-    { "label": "Our Story", "href": "#story" },
-    { "label": "Process", "href": "#process" },
-    { "label": "Contact", "href": "#contact" } ],
-  "hero": {
-    "eyebrow": "Ichalkaranji, Maharashtra · Est. 2025",
-    "titlePlain": "Printed.", "titleAccent": "Not Manufactured.",
-    "sub": "Bold lamps, desk gear and collectibles — designed on screen, grown layer by layer on our print farm, and hand-finished before they reach your door. No factory. No middlemen. Just hot plastic and stubborn standards.",
-    "cta1": "Shop New Drops", "cta2": "Collections ↗",
-    "img": "", "imgNote": "PHOTO SLOT — HERO: your best lamp shade, lit, dark table, vertical crop.",
-    "nowPrinting": "NOW PRINTING: <b>HALO VORONOI · 62%</b> · PETG · 0.2MM" },
-  "collectionsSection": { "title": "Pick Your Poison",
-    "sub": "Three lines. One printer that never sleeps. Every collection has a name, a story, and zero boring pieces." },
-  "collections": [
-    { "name": "Freedom Series", "label": "Collection 01 — Collectibles", "stripe": "#2B4BFF", "img": "", "imgNote": "PHOTO — Gandhi + Ambedkar figures together, eye level" },
-    { "name": "Glow Theory", "label": "Collection 02 — Light", "stripe": "#FF5A1F", "img": "", "imgNote": "PHOTO — Lamp glowing in a dark room, warm bulb" },
-    { "name": "Desk Rebellion", "label": "Collection 03 — Desk", "stripe": "#FFD23F", "img": "", "imgNote": "PHOTO — Pen stand + MagSafe stand on a real desk" } ],
-  "dropsSection": { "title": "New Drops",
-    "sub": "Small batches. When a drop sells out, the printer queues the next one. Good things take layers." },
-  "products": [
-    { "id": "halo-voronoi", "name": "Halo Voronoi Lamp Shade", "collection": "Glow Theory", "price": 999, "mrp": 1299, "specs": ["PETG","B22 fit","Ø165mm"], "img": "", "imgNote": "PHOTO: lamp ON in dark room", "desc": "A Voronoi-pattern shade that throws a web of light across your walls. Fits standard B22 bulb holders — swap it onto any lamp in minutes. Printed in heat-tolerant PETG so it handles warm bulbs without warping.\n\nEdit this description in Admin → Products.", "gallery": [] },
-    { "id": "mahatma", "name": "The Mahatma — Freedom Series 01", "collection": "Freedom Series", "price": 699, "mrp": 899, "specs": ["PLA+","120mm tall","Hand-finished"], "img": "", "imgNote": "PHOTO: 3/4 angle, plain background", "desc": "The first figure in our Freedom Series. Hand-finished, 120mm tall, a quiet statement piece for a desk or shelf.\n\nEdit this description in Admin → Products.", "gallery": [] },
-    { "id": "architect", "name": "The Architect — Freedom Series 02", "collection": "Freedom Series", "price": 699, "mrp": 899, "specs": ["PLA+","120mm tall","Hand-finished"], "img": "", "imgNote": "PHOTO: same setup as Mahatma", "desc": "Freedom Series 02. Pairs with The Mahatma as a set.\n\nEdit this description in Admin → Products.", "gallery": [] },
-    { "id": "desk-rebel", "name": "Desk Rebel Pen Stand", "collection": "Desk Rebellion", "price": 399, "mrp": 499, "specs": ["PETG","Weighted base","Fits 12+ pens"], "img": "", "imgNote": "PHOTO: on a real desk, pens in", "desc": "A weighted pen stand that holds a dozen pens without tipping. Built to live on a working desk, not a showroom.\n\nEdit this description in Admin → Products.", "gallery": [] },
-    { "id": "grip-halo", "name": "Grip Halo MagSafe Stand", "collection": "Desk Rebellion", "price": 549, "mrp": 699, "specs": ["PETG","MagSafe","60° tilt"], "img": "", "imgNote": "PHOTO: phone mounted, screen on", "desc": "A MagSafe phone stand with a 60° tilt — perfect for video calls, recipes, or watching something while you work.\n\nEdit this description in Admin → Products.", "gallery": [] },
-    { "id": "facet-wall", "name": "Facet Wall Art — Set of 3", "collection": "Glow Theory", "price": 1299, "mrp": 1599, "specs": ["PETG","Set of 3","Tape-mount"], "img": "", "imgNote": "PHOTO: mounted on colored wall", "desc": "A set of three faceted wall tiles. Tape-mount, no drilling. Arrange them however you like.\n\nEdit this description in Admin → Products.", "gallery": [] } ],
-  "story": { "eyebrow": "Our Story",
-    "titleLines": ["One printer.", "One town.", "<span>Zero chill.</span>"],
-    "text": "House of Madese started in Ichalkaranji — a textile town that's been making things for a century — with one 3D printer and the idea that Indian homes deserve objects with actual personality. We design everything ourselves, print in tough PETG, and hand-finish every single piece. GST-registered, Udyam-registered, and unreasonably obsessed with layer quality.",
-    "stats": [
-      { "big": "100%", "small": "Designed & printed in India" },
-      { "big": "48 HR", "small": "Dispatch on in-stock drops" },
-      { "big": "0.2MM", "small": "Layer height. We check every one." },
-      { "big": "7-DAY", "small": "Replacement, no drama" } ] },
-  "processSection": { "title": "How A Madese Piece Is Born",
-    "sub": "Not a factory line. A pipeline we built ourselves — and we'll happily show you the messy middle on Instagram.",
-    "steps": [
-      { "tag": "Step 01 / Design", "title": "Sketched in CAD", "text": "Every piece starts as parametric geometry we model in-house. If it looks like everything else on Amazon, it gets deleted." },
-      { "tag": "Step 02 / Slice", "title": "Sliced & tuned", "text": "Wall counts, infill, supports — tuned per product so it's strong where it matters and light where it doesn't." },
-      { "tag": "Step 03 / Print", "title": "Grown layer by layer", "text": "Printed in PETG on our farm. Hours per piece. The layer lines aren't a flaw — they're the signature." },
-      { "tag": "Step 04 / Finish", "title": "Hand-finished", "text": "Deburred, checked, and packed by an actual human in Ichalkaranji who will take it personally if it arrives ugly." } ] },
-  "quotesSection": { "title": "People Are Talking",
-    "sub": "Real words from real orders. We'll never fake these — that's the whole point of this brand.",
-    "quotes": [] },
-  "badges": [
-    { "title": "Made in India", "text": "Designed & printed in Ichalkaranji. Filament to finish." },
-    { "title": "Ships in 48 Hrs", "text": "In-stock drops dispatch within two working days." },
-    { "title": "UPI · Cards", "text": "Pay how you like. Secured by Razorpay." },
-    { "title": "7-Day Replacement", "text": "Damaged in transit? We reprint and reship. Done." } ],
-  "newsletterTitle": "Join The Print Queue",
-  "footer": {
-    "columns": [
-      { "head": "Shop", "links": [ { "label": "New Drops", "href": "#drops" }, { "label": "Collections", "href": "#collections" }, { "label": "Our Story", "href": "#story" } ] },
-      { "head": "Info", "links": [ { "label": "Shipping & Returns", "href": "#", "policy": "shipping" }, { "label": "Replacement Policy", "href": "#", "policy": "returns" }, { "label": "Privacy Policy", "href": "#", "policy": "privacy" }, { "label": "Terms", "href": "#", "policy": "terms" } ] },
-      { "head": "Reach Us", "links": [ { "label": "Instagram", "href": "#" }, { "label": "Amazon Storefront", "href": "#" }, { "label": "Email us", "href": "mailto:hello@houseofmadese.in" } ] } ],
-    "legal": "© 2026 House of Madese · Ichalkaranji, MH",
-    "tag": "EVERY LAYER COUNTS." },
-  "policies": {
-    "shipping": { "title": "Shipping & Delivery", "body": "House of Madese products are 3D-printed to order in Ichalkaranji, Maharashtra.\n\nDISPATCH TIME\nIn-stock items are dispatched within 48 working hours of a confirmed order. Made-to-order items (most collectibles and larger pieces) are printed after your order is placed and typically dispatch within 3–6 working days. Your order confirmation on WhatsApp will tell you which applies to your items.\n\nDELIVERY TIME\nOnce dispatched, delivery usually takes 3–7 working days depending on your location, via our courier partners. Remote PIN codes may take longer.\n\nSHIPPING CHARGES\nShipping charges (if any) are shown at checkout. Prepaid orders may qualify for free or discounted shipping as noted on the site.\n\nTRACKING\nWe share tracking details over WhatsApp or email once your order ships.\n\nQUESTIONS\nMessage us on WhatsApp any time for an update on your order." },
-    "returns": { "title": "Returns & Replacement", "body": "We want you to love what you receive. Because each item is 3D-printed to order, please read this carefully.\n\nDAMAGED OR DEFECTIVE ITEMS\nIf your item arrives damaged, defective, or not as described, contact us within 7 days of delivery with a photo/video and your order ID. We will reprint and reship a replacement free of charge, or issue a refund — your choice.\n\nUNBOXING VIDEO\nA clear unboxing video helps us process damage claims fastest. We recommend filming the package opening.\n\nMADE-TO-ORDER ITEMS\nBecause items are custom-printed for you, we do not accept returns for change of mind, wrong size selected, or minor variations in colour/texture that are inherent to 3D printing (layer lines are a feature of the process, not a defect).\n\nHOW TO CLAIM\nWhatsApp us your order ID + photos within 7 days of delivery. Approved replacements are dispatched within 48 hours.\n\nREFUNDS\nApproved refunds are processed to your original payment method within 5–7 working days." },
-    "privacy": { "title": "Privacy Policy", "body": "House of Madese respects your privacy.\n\nWHAT WE COLLECT\nWhen you place an order we collect your name, phone number, delivery address, and PIN code so we can fulfil and deliver your order. Payment is handled securely by Razorpay — we never see or store your card, UPI, or bank details.\n\nHOW WE USE IT\nYour information is used only to process, dispatch, and support your order, and to contact you about it (usually via WhatsApp). We do not sell your data to anyone.\n\nSTORAGE\nOrder details are stored securely with our order-management provider. Payment records are held by Razorpay under their own security standards.\n\nYOUR CHOICES\nYou can ask us to update or delete your stored details at any time by messaging us.\n\nCONTACT\nFor any privacy question, reach us at the email or WhatsApp listed on this site." },
-    "terms": { "title": "Terms of Service", "body": "By placing an order with House of Madese you agree to the following.\n\nPRODUCTS\nItems are 3D-printed decor and collectibles. Photos are representative; because pieces are printed individually, small variations in colour, texture, and layer finish are normal and are part of the handmade character of the product.\n\nPRICING & PAYMENT\nAll prices are in INR and inclusive of applicable taxes unless stated otherwise. Payment is collected securely via Razorpay at checkout. Orders are confirmed only after successful payment.\n\nORDER CONFIRMATION\nWe confirm every order over WhatsApp or email. We reserve the right to cancel and fully refund an order if an item cannot be fulfilled.\n\nINTELLECTUAL PROPERTY\nAll designs, brand names, and content on this site belong to House of Madese.\n\nGOVERNING LAW\nThese terms are governed by the laws of India. Jurisdiction: Maharashtra.\n\nCONTACT\nHouse of Madese, Ichalkaranji, Maharashtra. Reach us via the contact details on this site." }
+<script type="application/json" id="SITE_DATA">{
+ "brand": {
+  "name": "House of",
+  "accent": "Madese",
+  "city": "Ichalkaranji, MH",
+  "whatsapp": "91XXXXXXXXXX",
+  "email": "hello@houseofmadese.in",
+  "tagline": "3D-printed decor and collectibles from Ichalkaranji, Maharashtra. GST & Udyam registered MSME."
+ },
+ "marquee": [
+  "🔥 LAUNCH OFFER — FLAT 20% OFF · CODE: <b>FIRSTLAYER<\/b>",
+  "⚡ MADE IN INDIA. LAYER BY LAYER.",
+  "📦 SHIPS IN 48 HOURS",
+  "💬 ORDER HELP ON WHATSAPP"
+ ],
+ "nav": [
+  {
+   "label": "New Drops",
+   "href": "#drops"
   },
-  "razorpayKey": "rzp_test_PASTE_YOUR_KEY_HERE",
-  "adminPassword": "madese123",
-  "supabaseUrl": "",
-  "supabaseAnonKey": "",
-  "cartName": "Your Queue"
-}
-</script>
+  {
+   "label": "Collections",
+   "href": "#collections"
+  },
+  {
+   "label": "Our Story",
+   "href": "#story"
+  },
+  {
+   "label": "Process",
+   "href": "#process"
+  },
+  {
+   "label": "Contact",
+   "href": "#contact"
+  }
+ ],
+ "hero": {
+  "eyebrow": "Ichalkaranji, Maharashtra · Est. 2025",
+  "titlePlain": "Printed.",
+  "titleAccent": "Not Manufactured.",
+  "sub": "Bold lamps, desk gear and collectibles — designed on screen, grown layer by layer on our print farm, and hand-finished before they reach your door. No factory. No middlemen. Just hot plastic and stubborn standards.",
+  "cta1": "Shop New Drops",
+  "cta2": "Collections ↗",
+  "img": "",
+  "imgNote": "PHOTO SLOT — HERO: your best lamp shade, lit, dark table, vertical crop.",
+  "nowPrinting": "NOW PRINTING: <b>HALO VORONOI · 62%<\/b> · PETG · 0.2MM"
+ },
+ "collectionsSection": {
+  "title": "Pick Your Poison",
+  "sub": "Three lines. One printer that never sleeps. Every collection has a name, a story, and zero boring pieces."
+ },
+ "collections": [
+  {
+   "name": "Freedom Series",
+   "label": "Collection 01 — Collectibles",
+   "stripe": "#2B4BFF",
+   "img": "",
+   "imgNote": "PHOTO — Gandhi + Ambedkar figures together, eye level"
+  },
+  {
+   "name": "Glow Theory",
+   "label": "Collection 02 — Light",
+   "stripe": "#FF5A1F",
+   "img": "",
+   "imgNote": "PHOTO — Lamp glowing in a dark room, warm bulb"
+  },
+  {
+   "name": "Desk Rebellion",
+   "label": "Collection 03 — Desk",
+   "stripe": "#FFD23F",
+   "img": "",
+   "imgNote": "PHOTO — Pen stand + MagSafe stand on a real desk"
+  }
+ ],
+ "dropsSection": {
+  "title": "New Drops",
+  "sub": "Small batches. When a drop sells out, the printer queues the next one. Good things take layers."
+ },
+ "products": [
+  {
+   "id": "halo-voronoi",
+   "name": "Halo Voronoi Lamp Shade",
+   "collection": "Glow Theory",
+   "price": 999,
+   "mrp": 1299,
+   "specs": [
+    "PETG",
+    "B22 fit",
+    "Ø165mm"
+   ],
+   "img": "",
+   "imgNote": "PHOTO: lamp ON in dark room",
+   "desc": "A Voronoi-pattern shade that throws a web of light across your walls. Fits standard B22 bulb holders — swap it onto any lamp in minutes. Printed in heat-tolerant PETG so it handles warm bulbs without warping.\n\nEdit this description in Admin → Products.",
+   "gallery": []
+  },
+  {
+   "id": "mahatma",
+   "name": "The Mahatma — Freedom Series 01",
+   "collection": "Freedom Series",
+   "price": 699,
+   "mrp": 899,
+   "specs": [
+    "PLA+",
+    "120mm tall",
+    "Hand-finished"
+   ],
+   "img": "",
+   "imgNote": "PHOTO: 3/4 angle, plain background",
+   "desc": "The first figure in our Freedom Series. Hand-finished, 120mm tall, a quiet statement piece for a desk or shelf.\n\nEdit this description in Admin → Products.",
+   "gallery": []
+  },
+  {
+   "id": "architect",
+   "name": "The Architect — Freedom Series 02",
+   "collection": "Freedom Series",
+   "price": 699,
+   "mrp": 899,
+   "specs": [
+    "PLA+",
+    "120mm tall",
+    "Hand-finished"
+   ],
+   "img": "",
+   "imgNote": "PHOTO: same setup as Mahatma",
+   "desc": "Freedom Series 02. Pairs with The Mahatma as a set.\n\nEdit this description in Admin → Products.",
+   "gallery": []
+  },
+  {
+   "id": "desk-rebel",
+   "name": "Desk Rebel Pen Stand",
+   "collection": "Desk Rebellion",
+   "price": 399,
+   "mrp": 499,
+   "specs": [
+    "PETG",
+    "Weighted base",
+    "Fits 12+ pens"
+   ],
+   "img": "",
+   "imgNote": "PHOTO: on a real desk, pens in",
+   "desc": "A weighted pen stand that holds a dozen pens without tipping. Built to live on a working desk, not a showroom.\n\nEdit this description in Admin → Products.",
+   "gallery": []
+  },
+  {
+   "id": "grip-halo",
+   "name": "Grip Halo MagSafe Stand",
+   "collection": "Desk Rebellion",
+   "price": 549,
+   "mrp": 699,
+   "specs": [
+    "PETG",
+    "MagSafe",
+    "60° tilt"
+   ],
+   "img": "",
+   "imgNote": "PHOTO: phone mounted, screen on",
+   "desc": "A MagSafe phone stand with a 60° tilt — perfect for video calls, recipes, or watching something while you work.\n\nEdit this description in Admin → Products.",
+   "gallery": []
+  },
+  {
+   "id": "facet-wall",
+   "name": "Facet Wall Art — Set of 3",
+   "collection": "Glow Theory",
+   "price": 1299,
+   "mrp": 1599,
+   "specs": [
+    "PETG",
+    "Set of 3",
+    "Tape-mount"
+   ],
+   "img": "",
+   "imgNote": "PHOTO: mounted on colored wall",
+   "desc": "A set of three faceted wall tiles. Tape-mount, no drilling. Arrange them however you like.\n\nEdit this description in Admin → Products.",
+   "gallery": []
+  }
+ ],
+ "story": {
+  "eyebrow": "Our Story",
+  "titleLines": [
+   "One printer.",
+   "One town.",
+   "<span>Zero chill.<\/span>"
+  ],
+  "text": "House of Madese started in Ichalkaranji — a textile town that's been making things for a century — with one 3D printer and the idea that Indian homes deserve objects with actual personality. We design everything ourselves, print in tough PETG, and hand-finish every single piece. GST-registered, Udyam-registered, and unreasonably obsessed with layer quality.",
+  "stats": [
+   {
+    "big": "100%",
+    "small": "Designed & printed in India"
+   },
+   {
+    "big": "48 HR",
+    "small": "Dispatch on in-stock drops"
+   },
+   {
+    "big": "0.2MM",
+    "small": "Layer height. We check every one."
+   },
+   {
+    "big": "7-DAY",
+    "small": "Replacement, no drama"
+   }
+  ]
+ },
+ "processSection": {
+  "title": "How A Madese Piece Is Born",
+  "sub": "Not a factory line. A pipeline we built ourselves — and we'll happily show you the messy middle on Instagram.",
+  "steps": [
+   {
+    "tag": "Step 01 / Design",
+    "title": "Sketched in CAD",
+    "text": "Every piece starts as parametric geometry we model in-house. If it looks like everything else on Amazon, it gets deleted."
+   },
+   {
+    "tag": "Step 02 / Slice",
+    "title": "Sliced & tuned",
+    "text": "Wall counts, infill, supports — tuned per product so it's strong where it matters and light where it doesn't."
+   },
+   {
+    "tag": "Step 03 / Print",
+    "title": "Grown layer by layer",
+    "text": "Printed in PETG on our farm. Hours per piece. The layer lines aren't a flaw — they're the signature."
+   },
+   {
+    "tag": "Step 04 / Finish",
+    "title": "Hand-finished",
+    "text": "Deburred, checked, and packed by an actual human in Ichalkaranji who will take it personally if it arrives ugly."
+   }
+  ]
+ },
+ "quotesSection": {
+  "title": "People Are Talking",
+  "sub": "Real words from real orders. We'll never fake these — that's the whole point of this brand.",
+  "quotes": []
+ },
+ "badges": [
+  {
+   "title": "Made in India",
+   "text": "Designed & printed in Ichalkaranji. Filament to finish."
+  },
+  {
+   "title": "Ships in 48 Hrs",
+   "text": "In-stock drops dispatch within two working days."
+  },
+  {
+   "title": "UPI · Cards",
+   "text": "Pay how you like. Secured by Razorpay."
+  },
+  {
+   "title": "7-Day Replacement",
+   "text": "Damaged in transit? We reprint and reship. Done."
+  }
+ ],
+ "newsletterTitle": "Join The Print Queue",
+ "footer": {
+  "columns": [
+   {
+    "head": "Shop",
+    "links": [
+     {
+      "label": "New Drops",
+      "href": "#drops"
+     },
+     {
+      "label": "Collections",
+      "href": "#collections"
+     },
+     {
+      "label": "Our Story",
+      "href": "#story"
+     }
+    ]
+   },
+   {
+    "head": "Info",
+    "links": [
+     {
+      "label": "Shipping & Returns",
+      "href": "#",
+      "policy": "shipping"
+     },
+     {
+      "label": "Replacement Policy",
+      "href": "#",
+      "policy": "returns"
+     },
+     {
+      "label": "Privacy Policy",
+      "href": "#",
+      "policy": "privacy"
+     },
+     {
+      "label": "Terms",
+      "href": "#",
+      "policy": "terms"
+     }
+    ]
+   },
+   {
+    "head": "Reach Us",
+    "links": [
+     {
+      "label": "Instagram",
+      "href": "#"
+     },
+     {
+      "label": "Amazon Storefront",
+      "href": "#"
+     },
+     {
+      "label": "Email us",
+      "href": "mailto:hello@houseofmadese.in"
+     }
+    ]
+   }
+  ],
+  "legal": "© 2026 House of Madese · Ichalkaranji, MH",
+  "tag": "EVERY LAYER COUNTS."
+ },
+ "policies": {
+  "shipping": {
+   "title": "Shipping & Delivery",
+   "body": "House of Madese products are 3D-printed to order in Ichalkaranji, Maharashtra.\n\nDISPATCH TIME\nIn-stock items are dispatched within 48 working hours of a confirmed order. Made-to-order items (most collectibles and larger pieces) are printed after your order is placed and typically dispatch within 3–6 working days. Your order confirmation on WhatsApp will tell you which applies to your items.\n\nDELIVERY TIME\nOnce dispatched, delivery usually takes 3–7 working days depending on your location, via our courier partners. Remote PIN codes may take longer.\n\nSHIPPING CHARGES\nShipping charges (if any) are shown at checkout. Prepaid orders may qualify for free or discounted shipping as noted on the site.\n\nTRACKING\nWe share tracking details over WhatsApp or email once your order ships.\n\nQUESTIONS\nMessage us on WhatsApp any time for an update on your order."
+  },
+  "returns": {
+   "title": "Returns & Replacement",
+   "body": "We want you to love what you receive. Because each item is 3D-printed to order, please read this carefully.\n\nDAMAGED OR DEFECTIVE ITEMS\nIf your item arrives damaged, defective, or not as described, contact us within 7 days of delivery with a photo/video and your order ID. We will reprint and reship a replacement free of charge, or issue a refund — your choice.\n\nUNBOXING VIDEO\nA clear unboxing video helps us process damage claims fastest. We recommend filming the package opening.\n\nMADE-TO-ORDER ITEMS\nBecause items are custom-printed for you, we do not accept returns for change of mind, wrong size selected, or minor variations in colour/texture that are inherent to 3D printing (layer lines are a feature of the process, not a defect).\n\nHOW TO CLAIM\nWhatsApp us your order ID + photos within 7 days of delivery. Approved replacements are dispatched within 48 hours.\n\nREFUNDS\nApproved refunds are processed to your original payment method within 5–7 working days."
+  },
+  "privacy": {
+   "title": "Privacy Policy",
+   "body": "House of Madese respects your privacy.\n\nWHAT WE COLLECT\nWhen you place an order we collect your name, phone number, delivery address, and PIN code so we can fulfil and deliver your order. Payment is handled securely by Razorpay — we never see or store your card, UPI, or bank details.\n\nHOW WE USE IT\nYour information is used only to process, dispatch, and support your order, and to contact you about it (usually via WhatsApp). We do not sell your data to anyone.\n\nSTORAGE\nOrder details are stored securely with our order-management provider. Payment records are held by Razorpay under their own security standards.\n\nYOUR CHOICES\nYou can ask us to update or delete your stored details at any time by messaging us.\n\nCONTACT\nFor any privacy question, reach us at the email or WhatsApp listed on this site."
+  },
+  "terms": {
+   "title": "Terms of Service",
+   "body": "By placing an order with House of Madese you agree to the following.\n\nPRODUCTS\nItems are 3D-printed decor and collectibles. Photos are representative; because pieces are printed individually, small variations in colour, texture, and layer finish are normal and are part of the handmade character of the product.\n\nPRICING & PAYMENT\nAll prices are in INR and inclusive of applicable taxes unless stated otherwise. Payment is collected securely via Razorpay at checkout. Orders are confirmed only after successful payment.\n\nORDER CONFIRMATION\nWe confirm every order over WhatsApp or email. We reserve the right to cancel and fully refund an order if an item cannot be fulfilled.\n\nINTELLECTUAL PROPERTY\nAll designs, brand names, and content on this site belong to House of Madese.\n\nGOVERNING LAW\nThese terms are governed by the laws of India. Jurisdiction: Maharashtra.\n\nCONTACT\nHouse of Madese, Ichalkaranji, Maharashtra. Reach us via the contact details on this site."
+  }
+ },
+ "razorpayKey": "rzp_test_PASTE_YOUR_KEY_HERE",
+ "adminPassword": "madese123",
+ "supabaseUrl": "https://jalxigzrxqjnmecizfrf.supabase.co",
+ "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphbHhpZ3pyeHFqbm1lY2l6ZnJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDg4NTEsImV4cCI6MjEwMTUyNDg1MX0.isTe_eXr43G_uXfWtkPzInK-VmvprE96AuFdgKVSP28",
+ "cartName": "Your Queue"
+}</script>
 
 <script>
 /* ════════════════════════════════════════════════════════════
@@ -1155,5 +1575,6 @@ loadDraft();
 renderAll();
 if(location.hash === "#admin") openAdmin();
 </script>
-</body>
-</html>
+
+
+<div class="razorpay-container" style="z-index: 2147483647; position: fixed; top: 0px; display: none; left: 0px; height: 100%; width: 100%; max-height: 100dvh; backface-visibility: hidden; overflow-y: visible;"><style>@keyframes rzp-rot{to{transform: rotate(360deg);}}@-webkit-keyframes rzp-rot{to{-webkit-transform: rotate(360deg);}} .razorpay-container > iframe {min-height: 100%!important;} .razorpay-checkout-frame.razorpay-mobile-layout{max-width:450px !important;height:90vh !important;min-height:0 !important;max-height:900px !important;position:fixed !important;top:50% !important;left:50% !important;transform:translate(-50%,-50%) !important;border-radius:16px !important;overflow:hidden !important;}@media(max-width:450px){.razorpay-checkout-frame.razorpay-mobile-layout{max-width:100% !important;width:100% !important;height:100% !important;max-height:100% !important;top:0 !important;left:0 !important;transform:none !important;border-radius:0 !important;}}</style><div class="razorpay-backdrop" style="min-height: 100%; transition: 0.3s ease-out; position: fixed; top: 0px; left: 0px; width: 100%; height: 100%;"><span style="text-decoration: none; background: rgb(214, 68, 68); border: 1px dashed white; padding: 3px; opacity: 0; transform: rotate(45deg); transition: opacity 0.3s ease-in; font-family: lato, ubuntu, helvetica, sans-serif; color: white; position: absolute; width: 200px; text-align: center; right: -50px; top: 50px;">Test Mode</span></div><iframe allowtransparency="true" frameborder="0" width="100%" height="100%" src="https://api.razorpay.com/v1/checkout/public?traffic_env=production&amp;build=806a7497f1c5fa8892aae6122b6fccbbbacd1d9e&amp;build_v1=da4ee3f43a28ad81dba8ed06daf899a4520c691f&amp;checkout_v2=1&amp;new_session=1&amp;rzp_device_id=1.8f5de42301c4154418d3ae6dd342a9244847d280.1785946244352.33735876&amp;unified_session_id=TMCxTi5yhiuBYN" class="razorpay-checkout-frame" allow="otp-credentials; payment; clipboard-write; publickey-credentials-get https://api.razorpay.com; publickey-credentials-create 'self' https://api.razorpay.com; web-share; camera *; local-network-access 'none'; loopback-network 'none';" style="opacity: 1; height: 100%; position: relative; background: none; display: block; border: 0px transparent; margin: 0px; padding: 0px; z-index: 2;"></iframe></div><simplycodes-ui id="SCExtension-bbaa17" style="z-index: calc(infinity); overflow: visible; position: relative; width: 0px; height: 0px; display: block; pointer-events: none; opacity: 0;"><style>@font-face{font-family:simply-circular;src:url(https://images.simplycodes.com/fonts/simply-circular/CircularXXWeb-Regular.woff2)format("woff2");font-display:swap;font-feature-settings:"'ss08'on";font-style:normal;font-weight:400}@font-face{font-family:simply-circular;src:url(https://images.simplycodes.com/fonts/simply-circular/CircularXXWeb-Italic.woff2)format("woff2");font-display:swap;font-feature-settings:"'ss08'on";font-style:italic;font-weight:400}@font-face{font-family:simply-circular;src:url(https://images.simplycodes.com/fonts/simply-circular/CircularXXWeb-Medium.woff2)format("woff2");font-display:swap;font-feature-settings:"'ss08'on";font-style:normal;font-weight:500}@font-face{font-family:simply-circular;src:url(https://images.simplycodes.com/fonts/simply-circular/CircularXXWeb-MediumItalic.woff2)format("woff2");font-display:swap;font-feature-settings:"'ss08'on";font-style:italic;font-weight:500}@font-face{font-family:simply-circular;src:url(https://images.simplycodes.com/fonts/simply-circular/CircularXXWeb-Bold.woff2)format("woff2");font-display:swap;font-feature-settings:"'ss08'on";font-style:normal;font-weight:700}@font-face{font-family:simply-circular;src:url(https://images.simplycodes.com/fonts/simply-circular/CircularXXWeb-BoldItalic.woff2)format("woff2");font-display:swap;font-feature-settings:"'ss08'on";font-style:italic;font-weight:700}@font-face{font-family:degular;src:url(https://images.simplycodes.com/fonts/degular/Degular-Bold.woff2)format("woff2");font-display:swap;font-style:normal;font-weight:700}@font-face{font-family:neue-haas-grotesk;src:url(https://images.simplycodes.com/fonts/neue-haas-grotesk/NHaasGroteskDSPro-55Rg.woff2)format("woff2");font-display:swap;font-style:normal;font-weight:400}@font-face{font-family:neue-haas-grotesk;src:url(https://images.simplycodes.com/fonts/neue-haas-grotesk/NHaasGroteskDSPro-65Md.woff2)format("woff2");font-display:swap;font-style:normal;font-weight:500}@font-face{font-family:neue-haas-grotesk;src:url(https://images.simplycodes.com/fonts/neue-haas-grotesk/NHaasGroteskDSPro-75Bd.woff2)format("woff2");font-display:swap;font-style:normal;font-weight:700}[id^=SCExtension]{all:initial;z-index:calc(Infinity);transition-property:opacity;transition-duration:.25s;position:absolute}</style></simplycodes-ui></body></html>
