@@ -31,36 +31,41 @@ export default async function handler(req, res) {
 
     const codRef = "COD" + Date.now();
 
-    const SB_URL = process.env.SUPABASE_URL;
-    const SB_SERVICE = process.env.SUPABASE_SERVICE_KEY;
-    if (SB_URL && SB_SERVICE) {
-      const dbRes = await fetch(`${SB_URL}/rest/v1/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SB_SERVICE,
-          "Authorization": `Bearer ${SB_SERVICE}`,
-          "Prefer": "return=minimal",
-        },
-        body: JSON.stringify([{
-          payment_id: null,
-          order_id: codRef,
-          payment_method: "cod",
-          items_text: lineItems.join(", "),
-          total,
-          customer_name: String(customer.name).slice(0, 120),
-          phone: String(customer.phone).slice(0, 20),
-          address: String(customer.address).slice(0, 600),
-          status: "cod_pending",
-        }]),
-      });
-      if (!dbRes.ok) {
-        // Order still succeeds for the customer; owner should check Supabase config.
-        console.warn("COD order DB save failed:", await dbRes.text());
+    let dbSaved = false, dbError = null;
+    const SB_URL = (process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+    const SB_SERVICE = (process.env.SUPABASE_SERVICE_KEY || "").trim();
+    if (!SB_URL || !SB_SERVICE) {
+      dbError = "Supabase env vars missing on server (SUPABASE_URL / SUPABASE_SERVICE_KEY)";
+    } else {
+      try {
+        const dbRes = await fetch(`${SB_URL}/rest/v1/orders`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SB_SERVICE,
+            "Authorization": `Bearer ${SB_SERVICE}`,
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify([{
+            payment_id: null,
+            order_id: codRef,
+            payment_method: "cod",
+            items_text: lineItems.join(", "),
+            total,
+            customer_name: String(customer.name).slice(0, 120),
+            phone: String(customer.phone).slice(0, 20),
+            address: String(customer.address).slice(0, 600),
+            status: "cod_pending",
+          }]),
+        });
+        if (dbRes.ok) dbSaved = true;
+        else dbError = `Supabase ${dbRes.status}: ${(await dbRes.text()).slice(0, 300)}`;
+      } catch (e) {
+        dbError = "Fetch to Supabase failed: " + e.message;
       }
     }
 
-    res.status(200).json({ ok: true, ref: codRef, total });
+    res.status(200).json({ ok: true, ref: codRef, total, dbSaved, dbError });
   } catch (e) {
     res.status(500).json({ error: e.message || "Server error" });
   }
