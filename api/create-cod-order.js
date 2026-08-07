@@ -10,12 +10,14 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
+let coupons = [];
+try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) {}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
 
   try {
-    const { cart, customer, access_token } = req.body || {};
+    const { cart, customer, access_token, promoCode } = req.body || {};
     if (!cart || typeof cart !== "object" || !Object.keys(cart).length) { res.status(400).json({ error: "Empty cart" }); return; }
     if (!customer?.name || !customer?.phone || !customer?.address) { res.status(400).json({ error: "Missing customer details" }); return; }
 
@@ -27,6 +29,10 @@ export default async function handler(req, res) {
       if (!p) { res.status(400).json({ error: `Unknown product: ${id}` }); return; }
       total += p.price * qty;
       lineItems.push(`${p.name} x${qty}`);
+    }
+    if (promoCode) {
+      const c = coupons.find(x => x.code.toUpperCase() === String(promoCode).toUpperCase());
+      if (c) total = Math.max(0, total - Math.round(total * c.percent / 100));
     }
     if (total <= 0) { res.status(400).json({ error: "Invalid order" }); return; }
 
