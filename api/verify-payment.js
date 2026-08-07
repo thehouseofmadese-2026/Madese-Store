@@ -9,6 +9,7 @@
 import crypto from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { resolveCustomerId } from "./_resolveCustomer.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 
 export default async function handler(req, res) {
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
   if (!KEY_SECRET) { res.status(500).json({ error: "Razorpay secret not configured" }); return; }
 
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, cart, customer } = req.body || {};
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, cart, customer, access_token } = req.body || {};
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) { res.status(400).json({ error: "Missing payment fields" }); return; }
 
     // The signature check: HMAC-SHA256 of "orderId|paymentId" with your secret must match.
@@ -35,6 +36,10 @@ export default async function handler(req, res) {
       if (p) { total += p.price * qty; lineItems.push(`${p.name} x${qty}`); }
     }
 
+    // If the customer was logged in, link this order to their account.
+    // Never lets an account-linking problem block the actual order.
+    const customer_id = await resolveCustomerId(access_token);
+
     // Optionally store the order in Supabase (only if the env vars are set).
     const SB_URL = process.env.SUPABASE_URL;
     const SB_SERVICE = process.env.SUPABASE_SERVICE_KEY;
@@ -50,6 +55,7 @@ export default async function handler(req, res) {
         body: JSON.stringify([{
           payment_id: razorpay_payment_id,
           order_id: razorpay_order_id,
+          customer_id,
           items_text: lineItems.join(", "),
           total,
           customer_name: (customer?.name || "").slice(0, 120),
