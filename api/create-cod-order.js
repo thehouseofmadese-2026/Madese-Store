@@ -8,13 +8,14 @@
 // ─────────────────────────────────────────────────────────────
 import { readFileSync } from "fs";
 import { join } from "path";
+import { resolveCustomerId } from "./_resolveCustomer.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 
 export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
 
   try {
-    const { cart, customer } = req.body || {};
+    const { cart, customer, access_token } = req.body || {};
     if (!cart || typeof cart !== "object" || !Object.keys(cart).length) { res.status(400).json({ error: "Empty cart" }); return; }
     if (!customer?.name || !customer?.phone || !customer?.address) { res.status(400).json({ error: "Missing customer details" }); return; }
 
@@ -30,6 +31,7 @@ export default async function handler(req, res) {
     if (total <= 0) { res.status(400).json({ error: "Invalid order" }); return; }
 
     const codRef = "COD" + Date.now();
+    const customer_id = await resolveCustomerId(access_token);
 
     let dbSaved = false, dbError = null;
     const SB_URL = (process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
@@ -50,6 +52,7 @@ export default async function handler(req, res) {
             payment_id: null,
             order_id: codRef,
             payment_method: "cod",
+            customer_id,
             items_text: lineItems.join(", "),
             total,
             customer_name: String(customer.name).slice(0, 120),
