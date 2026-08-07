@@ -11,6 +11,8 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
+let coupons = [];
+try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) {}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
@@ -19,7 +21,7 @@ export default async function handler(req, res) {
   if (!KEY_SECRET) { res.status(500).json({ error: "Razorpay secret not configured" }); return; }
 
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, cart, customer, access_token } = req.body || {};
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, cart, customer, access_token, promoCode } = req.body || {};
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) { res.status(400).json({ error: "Missing payment fields" }); return; }
 
     // The signature check: HMAC-SHA256 of "orderId|paymentId" with your secret must match.
@@ -28,12 +30,18 @@ export default async function handler(req, res) {
       .digest("hex");
     if (expected !== razorpay_signature) { res.status(400).json({ verified: false, error: "Signature mismatch — payment not verified" }); return; }
 
-    // Recompute the trustworthy total again from server prices for the record.
+    // Recompute the trustworthy total again from server prices for the record —
+    // and apply the same coupon logic used at order-creation time, so the
+    // total we SAVE matches the amount that was actually CHARGED.
     let total = 0; const lineItems = [];
     for (const [id, qtyRaw] of Object.entries(cart || {})) {
       const qty = Math.max(1, parseInt(qtyRaw, 10) || 0);
       const p = products.find(x => x.id === id);
       if (p) { total += p.price * qty; lineItems.push(`${p.name} x${qty}`); }
+    }
+    if (promoCode) {
+      const c = coupons.find(x => x.code.toUpperCase() === String(promoCode).toUpperCase());
+      if (c) total = Math.max(0, total - Math.round(total * c.percent / 100));
     }
 
     // If the customer was logged in, link this order to their account.
