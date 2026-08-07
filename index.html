@@ -1532,8 +1532,8 @@ function cartCelebrate(){
    migration tightens the security rules so customers can only
    ever see their own data, never each other's or the owner's.
    ══════════════════════════════════════════════════════════════ */
-let customerUser = null;       // {id, email} once logged in
-let customerProfile = null;    // {name, phone, address, pincode, wishlist:[], cart:{}}
+var customerUser = null;       // {id, email} once logged in
+var customerProfile = null;    // {name, phone, address, pincode, wishlist:[], cart:{}}
 let accSignupMode = false;
 
 const CART_LS_KEY = "madese_cart_v1";
@@ -1661,13 +1661,14 @@ function accountLogin(){
 function finishLogin(){
   $("accEmail").value = ""; $("accPass").value = ""; $("accName").value = "";
   $("navAccountLabel").textContent = "Account";
+  profileEditMode = false;
   renderWishlistHearts();
   showLoggedInAccount();
 }
 
 function accountLogout(){
   if(supa) supa.auth.signOut().catch(()=>{});
-  customerUser = null; customerProfile = null;
+  customerUser = null; customerProfile = null; profileEditMode = false;
   $("navAccountLabel").textContent = "Login";
   renderWishlistHearts();
   closeAccount();
@@ -1686,15 +1687,38 @@ function showAccTab(t){
 }
 
 /* ── Profile tab ── */
+var profileEditMode = false;
+
+function hasSavedProfile(p){ return !!(p && (p.name || p.phone || p.address || p.pincode)); }
+
 function renderProfileTab(){
   const p = customerProfile || {};
+  const editing = profileEditMode || !hasSavedProfile(p);
+
+  if(!editing){
+    $("atab-profile").innerHTML = `
+      <div class="admin-row" style="flex-direction:column;align-items:flex-start;gap:4px;border:2px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
+        <div><b>${esc(p.name||'—')}</b></div>
+        <div class="meta">${esc(p.phone||'No phone saved')}</div>
+        <div class="meta">${esc(p.address||'No address saved')}</div>
+        <div class="meta">${esc(p.pincode||'')}</div>
+      </div>
+      <button class="btn btn-small" onclick="toggleProfileEdit(true)">Edit details</button>`;
+    return;
+  }
+
+  const canCancel = hasSavedProfile(p);
   $("atab-profile").innerHTML = `
     <div class="field"><label>Name</label><input id="pf2_name" value="${esc(p.name||'')}"></div>
     <div class="field"><label>Phone</label><input id="pf2_phone" value="${esc(p.phone||'')}"></div>
     <div class="field"><label>Delivery address</label><textarea id="pf2_addr">${esc(p.address||'')}</textarea></div>
     <div class="field"><label>PIN code</label><input id="pf2_pin" value="${esc(p.pincode||'')}"></div>
-    <button class="btn btn-solid btn-small" onclick="saveProfileFields()">Save</button>`;
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-solid btn-small" onclick="saveProfileFields()">Save</button>
+      ${canCancel ? `<button class="icon-btn" onclick="toggleProfileEdit(false)">Cancel</button>` : ""}
+    </div>`;
 }
+function toggleProfileEdit(on){ profileEditMode = on; renderProfileTab(); }
 async function saveProfileFields(){
   const updates = {
     name: $("pf2_name").value.trim(), phone: $("pf2_phone").value.trim(),
@@ -1704,7 +1728,8 @@ async function saveProfileFields(){
   const { error } = await supa.from("profiles").update(updates).eq("id", customerUser.id);
   if(error){ alert("Couldn't save: "+error.message); return; }
   Object.assign(customerProfile, updates);
-  alert("Saved!");
+  profileEditMode = false;
+  renderProfileTab();
 }
 
 /* ── Wishlist ── */
