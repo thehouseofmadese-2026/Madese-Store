@@ -10,6 +10,7 @@ import crypto from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
+import { baseId, summarizeCustomizations, insertOrder } from "./_cartHelpers.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 let coupons = [];
 try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) {}
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
   if (!KEY_SECRET) { res.status(500).json({ error: "Razorpay secret not configured" }); return; }
 
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, cart, customer, access_token, promoCode } = req.body || {};
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, cart, customer, access_token, promoCode, customizations } = req.body || {};
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) { res.status(400).json({ error: "Missing payment fields" }); return; }
 
     // The signature check: HMAC-SHA256 of "orderId|paymentId" with your secret must match.
@@ -36,9 +37,10 @@ export default async function handler(req, res) {
     let total = 0; const lineItems = [];
     for (const [id, qtyRaw] of Object.entries(cart || {})) {
       const qty = Math.max(1, parseInt(qtyRaw, 10) || 0);
-      const p = products.find(x => x.id === id);
+      const p = products.find(x => x.id === baseId(id));
       if (p) { total += p.price * qty; lineItems.push(`${p.name} x${qty}`); }
     }
+    const { note: customization_note, photoUrl: customization_photo_url } = summarizeCustomizations(customizations);
     if (promoCode) {
       const c = coupons.find(x => x.code.toUpperCase() === String(promoCode).toUpperCase());
       if (c) total = Math.max(0, total - Math.round(total * c.percent / 100));
@@ -52,25 +54,18 @@ export default async function handler(req, res) {
     const SB_URL = process.env.SUPABASE_URL;
     const SB_SERVICE = process.env.SUPABASE_SERVICE_KEY;
     if (SB_URL && SB_SERVICE) {
-      await fetch(`${SB_URL}/rest/v1/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SB_SERVICE,
-          "Authorization": `Bearer ${SB_SERVICE}`,
-          "Prefer": "return=minimal",
-        },
-        body: JSON.stringify([{
-          payment_id: razorpay_payment_id,
-          order_id: razorpay_order_id,
-          customer_id,
-          items_text: lineItems.join(", "),
-          total,
-          customer_name: (customer?.name || "").slice(0, 120),
-          phone: (customer?.phone || "").slice(0, 20),
-          address: (customer?.address || "").slice(0, 600),
-          status: "paid",
-        }]),
+      await insertOrder(SB_URL, SB_SERVICE, {
+        payment_id: razorpay_payment_id,
+        order_id: razorpay_order_id,
+        customer_id,
+        items_text: lineItems.join(", "),
+        total,
+        customer_name: (customer?.name || "").slice(0, 120),
+        phone: (customer?.phone || "").slice(0, 20),
+        address: (customer?.address || "").slice(0, 600),
+        status: "paid",
+        customization_note,
+        customization_photo_url,
       }).catch(() => {}); // payment already verified; a DB hiccup shouldn't fail the customer
     }
 

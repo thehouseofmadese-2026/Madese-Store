@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 import { readFileSync } from "fs";
 import { join } from "path";
+import { baseId } from "./_cartHelpers.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 let coupons = [];
 try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) { /* no coupons file — fine, none active */ }
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
     let amount = 0; const lineItems = [];
     for (const [id, qtyRaw] of Object.entries(cart)) {
       const qty = Math.max(1, Math.min(50, parseInt(qtyRaw, 10) || 0));
-      const p = products.find(x => x.id === id);
+      const p = products.find(x => x.id === baseId(id));
       if (!p) { res.status(400).json({ error: `Unknown product: ${id}` }); return; }
       amount += p.price * qty;
       lineItems.push(`${p.name} x${qty}`);

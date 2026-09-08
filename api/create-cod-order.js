@@ -9,6 +9,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
+import { baseId, summarizeCustomizations, insertOrder } from "./_cartHelpers.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 let coupons = [];
 try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) {}
@@ -17,7 +18,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
 
   try {
-    const { cart, customer, access_token, promoCode } = req.body || {};
+    const { cart, customer, access_token, promoCode, customizations } = req.body || {};
     if (!cart || typeof cart !== "object" || !Object.keys(cart).length) { res.status(400).json({ error: "Empty cart" }); return; }
     if (!customer?.name || !customer?.phone || !customer?.address) { res.status(400).json({ error: "Missing customer details" }); return; }
 
@@ -25,11 +26,12 @@ export default async function handler(req, res) {
     let total = 0; const lineItems = [];
     for (const [id, qtyRaw] of Object.entries(cart)) {
       const qty = Math.max(1, Math.min(50, parseInt(qtyRaw, 10) || 0));
-      const p = products.find(x => x.id === id);
+      const p = products.find(x => x.id === baseId(id));
       if (!p) { res.status(400).json({ error: `Unknown product: ${id}` }); return; }
       total += p.price * qty;
       lineItems.push(`${p.name} x${qty}`);
     }
+    const { note: customization_note, photoUrl: customization_photo_url } = summarizeCustomizations(customizations);
     if (promoCode) {
       const c = coupons.find(x => x.code.toUpperCase() === String(promoCode).toUpperCase());
       if (c) total = Math.max(0, total - Math.round(total * c.percent / 100));
@@ -46,26 +48,19 @@ export default async function handler(req, res) {
       dbError = "Supabase env vars missing on server (SUPABASE_URL / SUPABASE_SERVICE_KEY)";
     } else {
       try {
-        const dbRes = await fetch(`${SB_URL}/rest/v1/orders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SB_SERVICE,
-            "Authorization": `Bearer ${SB_SERVICE}`,
-            "Prefer": "return=minimal",
-          },
-          body: JSON.stringify([{
-            payment_id: null,
-            order_id: codRef,
-            payment_method: "cod",
-            customer_id,
-            items_text: lineItems.join(", "),
-            total,
-            customer_name: String(customer.name).slice(0, 120),
-            phone: String(customer.phone).slice(0, 20),
-            address: String(customer.address).slice(0, 600),
-            status: "cod_pending",
-          }]),
+        const { res: dbRes } = await insertOrder(SB_URL, SB_SERVICE, {
+          payment_id: null,
+          order_id: codRef,
+          payment_method: "cod",
+          customer_id,
+          items_text: lineItems.join(", "),
+          total,
+          customer_name: String(customer.name).slice(0, 120),
+          phone: String(customer.phone).slice(0, 20),
+          address: String(customer.address).slice(0, 600),
+          status: "cod_pending",
+          customization_note,
+          customization_photo_url,
         });
         if (dbRes.ok) dbSaved = true;
         else dbError = `Supabase ${dbRes.status}: ${(await dbRes.text()).slice(0, 300)}`;

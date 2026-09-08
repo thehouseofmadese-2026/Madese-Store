@@ -846,42 +846,48 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
    "label": "Collection 01 — Accessories",
    "stripe": "#2b4bff",
    "img": "",
-   "imgNote": "PHOTO — Gandhi + Ambedkar figures together, eye level"
+   "imgNote": "PHOTO — Gandhi + Ambedkar figures together, eye level",
+   "customizable": true
   },
   {
    "name": "Lamps",
    "label": "Collection 02 — Light",
    "stripe": "#ff5a1f",
    "img": "",
-   "imgNote": "PHOTO — Lamp glowing in a dark room, warm bulb"
+   "imgNote": "PHOTO — Lamp glowing in a dark room, warm bulb",
+   "customizable": false
   },
   {
    "name": "Desktop Needs",
    "label": "Collection 03 — Desk",
    "stripe": "#ff3d3d",
    "img": "",
-   "imgNote": "PHOTO — Pen stand + MagSafe stand on a real desk"
+   "imgNote": "PHOTO — Pen stand + MagSafe stand on a real desk",
+   "customizable": false
   },
   {
    "name": "Girlies",
    "label": "Collection 04",
    "stripe": "#ff2986",
    "img": "",
-   "imgNote": "PHOTO needed"
+   "imgNote": "PHOTO needed",
+   "customizable": false
   },
   {
    "name": "Homemaker",
    "label": "Collection 05",
    "stripe": "#ffdb29",
    "img": "",
-   "imgNote": "PHOTO needed"
+   "imgNote": "PHOTO needed",
+   "customizable": false
   },
   {
    "name": "Adult Money",
    "label": "Collection 06",
    "stripe": "#000000",
    "img": "",
-   "imgNote": "PHOTO needed"
+   "imgNote": "PHOTO needed",
+   "customizable": false
   }
  ],
  "dropsSection": {
@@ -1214,6 +1220,10 @@ function saveDraft(){
 function stripes(c){ return `repeating-linear-gradient(0deg, ${c} 0 12px, ${c}cc 12px 24px)`; }
 let activeFilter = "All";
 const cart = {};
+/* customDetails[cartId] = {note, photoUrl} — only set for customized queue entries (id contains "~cz~") */
+const customDetails = {};
+function baseProductId(id){ const i=id.indexOf("~cz~"); return i===-1?id:id.slice(0,i); }
+function isCustomizableProduct(p){ if(!p) return false; const c = SITE.collections.find(x=>x.name===p.collection); return !!(c&&c.customizable); }
 
 function renderAll(){
   const B = SITE.brand;
@@ -1343,7 +1353,16 @@ function openPdp(id){
     <div class="pdp-price"><span class="price">${money(p.price)}</span>${p.mrp>p.price?`<span class="strike">${money(p.mrp)}</span><span class="save-tag" style="position:static;transform:none">SAVE ${save}%</span>`:""}</div>
     <div class="pdp-specs">${(p.specs||[]).map(s=>`<span class="chip">${esc(s)}</span>`).join("")}</div>
     <p class="pdp-desc">${esc(p.desc||"")}</p>
-    <button class="pdp-add" onclick="addToCart('${esc(p.id)}');closePdp()">Add to Queue &mdash; ${money(p.price)}</button>
+    ${isCustomizableProduct(p) ? `
+    <div class="pdp-customize" style="border:2px dashed var(--ink);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-weight:700;margin-bottom:8px">🎨 Customize this (optional)</div>
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Upload a reference photo</label>
+      <input type="file" id="pdpCzPhoto" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" style="width:100%;margin-bottom:10px">
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Describe what you want</label>
+      <textarea id="pdpCzNote" placeholder="Names, colors, style, size — anything we should know" style="width:100%;min-height:70px;border:2px solid var(--ink);border-radius:8px;padding:8px;font-family:inherit"></textarea>
+      <div class="meta" style="margin-top:6px">Skip this and we'll follow up on WhatsApp for the details instead.</div>
+    </div>` : ""}
+    <button class="pdp-add" id="pdpAddBtn" onclick="addToCartFromPdp('${esc(p.id)}')">Add to Queue &mdash; ${money(p.price)}</button>
     <div class="pdp-trust"><span>🇮🇳 Made in India</span><span>📦 Ships in 48 hrs</span><span>🔁 7-day replacement</span></div>`;
   const pdpHeart = document.getElementById("pdpHeartBtn");
   if(pdpHeart) pdpHeart.setAttribute("data-heart", p.id);
@@ -1376,9 +1395,62 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ closePdp(); clos
 
 /* ── Cart & checkout ── */
 function addToCart(id){ cart[id]=(cart[id]||0)+1; renderCart(); toggleCart(true); cartCelebrate(); persistCart(); }
-function changeQty(id,d){ cart[id]=(cart[id]||0)+d; if(cart[id]<=0) delete cart[id]; renderCart(); persistCart(); }
+function changeQty(id,d){ cart[id]=(cart[id]||0)+d; if(cart[id]<=0){ delete cart[id]; delete customDetails[id]; } renderCart(); persistCart(); }
+
+/* ── Customize-on-checkout: photo + note attached to one queue entry ── */
+const CZ_ALLOWED = { "image/jpeg":1, "image/png":1, "image/webp":1, "image/heic":1, "image/heif":1 };
+function readFileAsDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = ()=>reject(new Error("Couldn't read that file."));
+    r.readAsDataURL(file);
+  });
+}
+async function uploadCustomizationPhoto(file, productId){
+  if(!CZ_ALLOWED[file.type]) throw new Error("Please use a JPEG, PNG, WEBP or HEIC photo.");
+  if(file.size > 8*1024*1024) throw new Error("That photo is too large (max 8MB).");
+  const dataUri = await readFileAsDataURL(file);
+  const res = await fetchWithTimeout("/api/upload-customization", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ productId, imageBase64: dataUri, imageType: file.type })
+  }, 30000);
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error || "Upload failed");
+  return data.url;
+}
+function addCustomToCart(id, note, photoUrl){
+  const czId = id + "~cz~" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  cart[czId] = 1;
+  customDetails[czId] = { note, photoUrl };
+  renderCart(); toggleCart(true); cartCelebrate(); persistCart();
+}
+async function addToCartFromPdp(id){
+  const p = SITE.products.find(x=>x.id===id); if(!p) return;
+  if(!isCustomizableProduct(p)){ addToCart(id); closePdp(); return; }
+  const photoInput = $("pdpCzPhoto"), noteInput = $("pdpCzNote");
+  const note = noteInput ? noteInput.value.trim() : "";
+  const file = photoInput && photoInput.files[0];
+  if(!note && !file){ addToCart(id); closePdp(); return; }
+  const btn = $("pdpAddBtn");
+  if(btn){ btn.disabled = true; btn.textContent = "Uploading…"; }
+  try{
+    const photoUrl = file ? await uploadCustomizationPhoto(file, id) : "";
+    addCustomToCart(id, note, photoUrl);
+    closePdp();
+  }catch(e){
+    alert("Couldn't upload your photo: "+e.message+"\n\nYou can still add this to your queue without it — just mention the details on WhatsApp after ordering.");
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = 'Add to Queue &mdash; '+money(p.price); }
+  }
+}
+function currentCustomizations(){
+  const out = {};
+  for(const id in cart){ if(customDetails[id]) out[id] = customDetails[id]; }
+  return out;
+}
 let appliedPromo = null; // {code, percent} once validated
-function cartSubtotal(){ return Object.entries(cart).reduce((t,[id,q])=>{const p=SITE.products.find(x=>x.id===id);return p?t+p.price*q:t;},0); }
+function cartSubtotal(){ return Object.entries(cart).reduce((t,[id,q])=>{const p=SITE.products.find(x=>x.id===baseProductId(id));return p?t+p.price*q:t;},0); }
 function promoDiscount(){ return appliedPromo ? Math.round(cartSubtotal() * appliedPromo.percent / 100) : 0; }
 function cartTotal(){ return Math.max(0, cartSubtotal() - promoDiscount()); }
 function applyPromo(){
@@ -1397,12 +1469,14 @@ function applyPromo(){
   }
   renderCart(); updatePayBtn();
 }
-function cartItemsText(){ return Object.entries(cart).map(([id,q])=>{const p=SITE.products.find(x=>x.id===id);return `${p?p.name:id} x${q}`;}).join(", "); }
+function cartItemsText(){ return Object.entries(cart).map(([id,q])=>{const p=SITE.products.find(x=>x.id===baseProductId(id));return `${p?p.name:id} x${q}`;}).join(", "); }
 function renderCart(){
   const items = Object.entries(cart);
   $("cartItems").innerHTML = items.length ? items.map(([id,q])=>{
-    const p = SITE.products.find(x=>x.id===id); if(!p) return "";
+    const p = SITE.products.find(x=>x.id===baseProductId(id)); if(!p) return "";
+    const cz = customDetails[id];
     return `<div class="cart-item"><div><b>${esc(p.name)}</b>
+      ${cz ? `<div class="meta" style="max-width:220px">🎨 ${cz.photoUrl?'<a href="'+esc(cz.photoUrl)+'" target="_blank" rel="noopener">Photo attached</a>':'No photo'}${cz.note?' — "'+esc(cz.note.slice(0,80))+(cz.note.length>80?'…':'')+'"':''}</div>` : ""}
       <div class="qty"><button onclick="changeQty('${esc(id)}',-1)">&minus;</button><span>${q}</span><button onclick="changeQty('${esc(id)}',1)">+</button></div></div>
       <div style="font-weight:700">${money(p.price*q)}</div></div>`;
   }).join("") : '<div class="empty-cart">Queue\'s empty.<br>Feed the printer. 🖨️</div>';
@@ -1459,7 +1533,7 @@ async function payCod(btn, name, phone, fullAddr){
     const access_token = await getAccessToken();
     const res = await fetchWithTimeout("/api/create-cod-order", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ cart, customer:{ name, phone, address: fullAddr }, access_token, promoCode: appliedPromo ? appliedPromo.code : null })
+      body: JSON.stringify({ cart, customer:{ name, phone, address: fullAddr }, access_token, promoCode: appliedPromo ? appliedPromo.code : null, customizations: currentCustomizations() })
     });
     const data = await res.json();
     if(!res.ok){ throw new Error(data.error || "Could not place order"); }
@@ -1471,7 +1545,7 @@ async function payCod(btn, name, phone, fullAddr){
     } else {
       alert("Order placed! Ref: "+data.ref+"\nWe'll confirm on WhatsApp before it goes to print — total due on delivery: "+money(data.total));
     }
-    for(const k in cart) delete cart[k]; appliedPromo=null; if($("promoMsg"))$("promoMsg").textContent=""; if($("promoInput"))$("promoInput").value="";
+    for(const k in cart) delete cart[k]; for(const k in customDetails) delete customDetails[k]; appliedPromo=null; if($("promoMsg"))$("promoMsg").textContent=""; if($("promoInput"))$("promoInput").value="";
     renderCart(); toggleCart(false); persistCart();
   }catch(e){
     alert(e.name === "AbortError" ? "That took too long — check your connection and try again."
@@ -1511,13 +1585,13 @@ async function payOnline(btn, name, phone, fullAddr){
               razorpay_order_id: res.razorpay_order_id,
               razorpay_payment_id: res.razorpay_payment_id,
               razorpay_signature: res.razorpay_signature,
-              cart, customer:{ name, phone, address: fullAddr }, access_token
+              cart, customer:{ name, phone, address: fullAddr }, access_token, customizations: currentCustomizations()
             })
           });
           const v = await vr.json();
           if(v.verified){
             alert("Payment confirmed! Order ID: "+v.payment_id+"\nWe'll message you on WhatsApp with dispatch details.");
-            for(const k in cart) delete cart[k]; appliedPromo=null; if($("promoMsg"))$("promoMsg").textContent=""; if($("promoInput"))$("promoInput").value="";
+            for(const k in cart) delete cart[k]; for(const k in customDetails) delete customDetails[k]; appliedPromo=null; if($("promoMsg"))$("promoMsg").textContent=""; if($("promoInput"))$("promoInput").value="";
             renderCart(); toggleCart(false); persistCart();
           } else {
             alert("We couldn't verify this payment automatically. Don't worry — if money left your account, WhatsApp us the payment ID and we'll sort it out.");
@@ -1689,7 +1763,7 @@ function renderCollectionsTab(){
       <div class="admin-row">
         <div style="display:flex;gap:12px;align-items:center;flex:1;min-width:220px">
           <div class="mini-img" style="${c.img?`background:url('${c.img}')`:`background:${stripes(c.stripe||"#2B4BFF")}`}"></div>
-          <div><b>${esc(c.name)}</b><div class="meta">${esc(c.label)} · ${SITE.products.filter(p=>p.collection===c.name).length} products</div></div>
+          <div><b>${esc(c.name)}</b><div class="meta">${esc(c.label)} · ${SITE.products.filter(p=>p.collection===c.name).length} products${c.customizable?' · <span style="color:var(--molten)">Customize button ON</span>':''}</div></div>
         </div>
         <div class="row-actions">
           <button class="icon-btn" onclick="editCollection(${i})">Edit</button>
@@ -1700,13 +1774,14 @@ function renderCollectionsTab(){
      <div id="collectionForm"></div>`;
 }
 function editCollection(i){
-  const c = i>=0 ? SITE.collections[i] : { name:"", label:"Collection 0"+(SITE.collections.length+1), stripe:"#2B4BFF", img:"", imgNote:"PHOTO — describe the shot" };
+  const c = i>=0 ? SITE.collections[i] : { name:"", label:"Collection 0"+(SITE.collections.length+1), stripe:"#2B4BFF", img:"", imgNote:"PHOTO — describe the shot", customizable:false };
   $("collectionForm").innerHTML = `<div class="admin-card"><h3>${i>=0?"Edit":"New"} collection</h3>
     <div class="field"><label>Name (products link to this exact name)</label><input id="cf_name" value="${esc(c.name)}"></div>
     <div class="field"><label>Small label above the name</label><input id="cf_label" value="${esc(c.label)}"></div>
     <div class="field"><label>Fallback stripe color (until a photo is added)</label><input id="cf_stripe" type="color" value="${esc(c.stripe||"#2B4BFF")}"></div>
     <div class="field"><label>Cover photo</label><input id="cf_img" type="file" accept="image/*">
       ${c.img?`<div class="meta">Current photo set ✓</div>`:""}</div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input id="cf_customizable" type="checkbox" ${c.customizable?"checked":""} style="width:auto"> Show a "Customize" button (photo upload + description) on products in this collection</label></div>
     <div style="display:flex;gap:10px"><button class="btn btn-solid btn-small" onclick="saveCollection(${i})">Save</button>
     <button class="icon-btn" onclick="$('collectionForm').innerHTML=''">Cancel</button></div></div>`;
   window.cfCurrentImg = c.img||"";
@@ -1714,7 +1789,7 @@ function editCollection(i){
 function saveCollection(i){
   const build = img => {
     const oldName = i>=0 ? SITE.collections[i].name : null;
-    const c = { name:$("cf_name").value.trim(), label:$("cf_label").value.trim(), stripe:$("cf_stripe").value, img:img, imgNote:(i>=0?SITE.collections[i].imgNote:"")||"PHOTO needed" };
+    const c = { name:$("cf_name").value.trim(), label:$("cf_label").value.trim(), stripe:$("cf_stripe").value, img:img, imgNote:(i>=0?SITE.collections[i].imgNote:"")||"PHOTO needed", customizable:$("cf_customizable").checked };
     if(!c.name){ alert("Give the collection a name."); return; }
     if(i>=0){ SITE.collections[i]=c;
       if(oldName && oldName!==c.name) SITE.products.forEach(p=>{ if(p.collection===oldName) p.collection=c.name; }); }
@@ -1778,7 +1853,10 @@ alter table orders enable row level security;
 create policy "owner reads orders" on orders for select using (auth.role() = 'authenticated');
 create policy "owner updates orders" on orders for update using (auth.role() = 'authenticated');
 -- If you already created this table before COD was added, run this too:
-alter table orders add column if not exists payment_method text default 'online';`;
+alter table orders add column if not exists payment_method text default 'online';
+-- If you already created this table before the Customize button was added, run this too:
+alter table orders add column if not exists customization_note text;
+alter table orders add column if not exists customization_photo_url text;`;
 
 function renderOrdersTab(){
   const el = $("tab-orders");
@@ -1798,7 +1876,11 @@ function renderOrdersTab(){
       </div>`;
     return;
   }
-  el.innerHTML = `<div class="admin-card"><h3>Orders</h3><div id="ordersList">Loading…</div></div>`;
+  el.innerHTML = `<div class="admin-card"><h3>Orders</h3>
+    <div class="note blue">New: the Customize button needs two extra columns on the <code class="k">orders</code> table (one-time, ~10 seconds).
+      <button class="icon-btn" onclick="navigator.clipboard.writeText('alter table orders add column if not exists customization_note text;\\nalter table orders add column if not exists customization_photo_url text;').then(()=>alert('Copied — paste in Supabase → SQL Editor → Run'))">Copy SQL</button>
+      Until you run it, orders still save fine — you just won't see the customization photo/note here.</div>
+    <div id="ordersList">Loading…</div></div>`;
   loadSupabase(ok=>{
     if(!ok){ $("ordersList").innerHTML = "Couldn't reach Supabase — check keys in Settings."; return; }
     supa.from("orders").select("*").order("created_at",{ascending:false}).limit(100).then(r=>{
@@ -1809,6 +1891,7 @@ function renderOrdersTab(){
           <div style="flex:1;min-width:220px"><b>${esc(o.customer_name)}</b> · ${esc(o.phone)} ${o.payment_method==='cod'?'<span class="chip">COD</span>':'<span class="chip">Online</span>'}
             <div class="meta">${esc(o.items_text)} — <b>${money(o.total)}</b></div>
             <div class="meta">${esc(o.address)}</div>
+            ${(o.customization_note||o.customization_photo_url)?`<div class="meta" style="color:var(--molten)">🎨 ${o.customization_note?esc(o.customization_note):""}${o.customization_photo_url?' · '+o.customization_photo_url.split(", ").map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">Photo</a>`).join(", "):""}</div>`:""}
             <div class="meta mono">${new Date(o.created_at).toLocaleString("en-IN")} · ${esc(o.payment_id||"")}${o.order_id?" · "+esc(o.order_id):""}</div></div>
           <div class="row-actions">
             <span class="pill ${o.status==='shipped'?'shipped':o.status==='cod_pending'?'new':'paid'}">${esc(o.status)}</span>
@@ -2025,17 +2108,23 @@ var customerProfile = null;    // {name, phone, address, pincode, wishlist:[], c
 let accSignupMode = false;
 
 const CART_LS_KEY = "madese_cart_v1";
+const CUSTOM_LS_KEY = "madese_custom_v1";
 
 function loadLocalCart(){
   try{
     const raw = localStorage.getItem(CART_LS_KEY);
     if(raw){ const obj = JSON.parse(raw); Object.assign(cart, obj); }
   }catch(e){}
+  try{
+    const raw = localStorage.getItem(CUSTOM_LS_KEY);
+    if(raw){ const obj = JSON.parse(raw); Object.assign(customDetails, obj); }
+  }catch(e){}
 }
 
 let cartSaveTimer = null;
 function persistCart(){
   try{ localStorage.setItem(CART_LS_KEY, JSON.stringify(cart)); }catch(e){}
+  try{ localStorage.setItem(CUSTOM_LS_KEY, JSON.stringify(customDetails)); }catch(e){}
   if(customerUser){
     clearTimeout(cartSaveTimer);
     cartSaveTimer = setTimeout(()=>{
