@@ -1775,8 +1775,8 @@ function editProduct(i){
       <div class="meta">Pick one or more — they add to the gallery. Click a thumbnail below to remove it.</div></div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input id="pf_showVariants" type="checkbox" ${p.showVariants?"checked":""} style="width:auto"> Show a "Design" picker on this product's page</label>
       <div id="pf_variantsWrap" style="display:flex;flex-direction:column;gap:8px;margin:8px 0"></div>
-      <button class="icon-btn" type="button" onclick="window.pfVariants.push({name:'',img:''});renderPfVariants()">+ Add design</button>
-      <div class="meta">Each design gets its own name and photo. Customers tap one to see that design's photo instead of the main one.</div></div>
+      <button class="icon-btn" type="button" onclick="window.pfVariants.push({name:'',img:'',stl:''});renderPfVariants()">+ Add design</button>
+      <div class="meta">Each design gets its own name, photo and 🔒 STL link (admin only). Customers tap one to see that design's photo instead of the main one.</div></div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input id="pf_showColors" type="checkbox" ${p.showColors?"checked":""} style="width:auto"> Show a "Color" picker on this product's page</label>
       <div id="pf_colorsWrap" style="display:flex;flex-direction:column;gap:8px;margin:8px 0"></div>
       <button class="icon-btn" type="button" onclick="window.pfColors.push({name:'',swatch:'#cccccc',img:''});renderPfColors()">+ Add color</button>
@@ -1799,11 +1799,14 @@ function renderPfGallery(){
 function renderPfVariants(){
   const w = $("pf_variantsWrap"); if(!w) return;
   w.innerHTML = (window.pfVariants||[]).map((v,i)=>`
-    <div style="display:flex;gap:8px;align-items:center">
-      <div class="mini-img" style="${v.img?`background:url('${v.img}')`:""}"></div>
-      <input placeholder="Design name (e.g. Batman)" value="${esc(v.name||"")}" oninput="window.pfVariants[${i}].name=this.value" style="flex:1;border:2px solid var(--ink);border-radius:9px;padding:10px 12px">
-      <input type="file" accept="image/*" style="max-width:150px" onchange="if(this.files[0])fileToDataURI(this.files[0],uri=>{window.pfVariants[${i}].img=uri;renderPfVariants()})">
-      <button class="icon-btn danger" type="button" onclick="window.pfVariants.splice(${i},1);renderPfVariants()">Remove</button>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line);border-radius:9px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="mini-img" style="${v.img?`background:url('${v.img}')`:""}"></div>
+        <input placeholder="Design name (e.g. Batman)" value="${esc(v.name||"")}" oninput="window.pfVariants[${i}].name=this.value" style="flex:1;border:2px solid var(--ink);border-radius:9px;padding:10px 12px">
+        <input type="file" accept="image/*" style="max-width:150px" onchange="if(this.files[0])fileToDataURI(this.files[0],uri=>{window.pfVariants[${i}].img=uri;renderPfVariants()})">
+        <button class="icon-btn danger" type="button" onclick="window.pfVariants.splice(${i},1);renderPfVariants()">Remove</button>
+      </div>
+      <input placeholder="🔒 STL link for this design (admin only)" value="${esc(v.stl||"")}" oninput="window.pfVariants[${i}].stl=this.value" style="border:2px solid var(--ink);border-radius:9px;padding:10px 12px">
     </div>`).join("") || `<span class="meta">No designs added yet.</span>`;
 }
 function renderPfColors(){
@@ -1829,7 +1832,7 @@ function saveProduct(i){
       img: img, imgNote: (i>=0?SITE.products[i].imgNote:"") || "PHOTO needed",
       gallery: (window.pfGallery||[]).slice(),
       showVariants: $("pf_showVariants").checked,
-      variants: (window.pfVariants||[]).filter(v=>v.name||v.img).map(v=>({name:v.name||"",img:v.img||""})),
+      variants: (window.pfVariants||[]).filter(v=>v.name||v.img).map(v=>({name:v.name||"",img:v.img||"",stl:v.stl||""})),
       showColors: $("pf_showColors").checked,
       colors: (window.pfColors||[]).filter(c=>c.name||c.img).map(c=>({name:c.name||"",swatch:c.swatch||"#cccccc",img:c.img||""}))
     };
@@ -1949,13 +1952,24 @@ alter table orders add column if not exists customization_photo_url text;`;
 
 /* Admin-only: match order line items back to each product's STL link so it can
    be opened with one click while fulfilling — never shown to customers. */
-function orderStlLinks(itemsText){
+function orderStlLinks(itemsText, note){
   if(!itemsText) return "";
+  const noteLower = (note||"").toLowerCase();
   const links = itemsText.split(",").map(s=>s.trim()).map(entry=>{
     const m = entry.match(/^(.*)\sx\d+$/);
     const name = m ? m[1].trim() : entry;
     const p = SITE.products.find(x=>x.name===name);
-    return (p && p.stl) ? `<a href="${esc(p.stl)}" target="_blank" rel="noopener" class="icon-btn" style="text-decoration:none;display:inline-block">🖨️ ${esc(p.name)} STL</a>` : "";
+    if(!p) return "";
+    // If the order's customize note mentions a specific design by name, prefer
+    // that design's own STL link — different designs can be different files.
+    const out = [];
+    (p.variants||[]).forEach(v=>{
+      if(v.stl && v.name && noteLower.includes(v.name.toLowerCase())){
+        out.push(`<a href="${esc(v.stl)}" target="_blank" rel="noopener" class="icon-btn" style="text-decoration:none;display:inline-block">🖨️ ${esc(p.name)} — ${esc(v.name)} STL</a>`);
+      }
+    });
+    if(!out.length && p.stl) out.push(`<a href="${esc(p.stl)}" target="_blank" rel="noopener" class="icon-btn" style="text-decoration:none;display:inline-block">🖨️ ${esc(p.name)} STL</a>`);
+    return out.join("");
   }).filter(Boolean);
   return links.length ? `<div class="meta" style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${links.join("")}</div>` : "";
 }
@@ -1991,7 +2005,7 @@ function renderOrdersTab(){
         <div class="admin-row">
           <div style="flex:1;min-width:220px"><b>${esc(o.customer_name)}</b> · ${esc(o.phone)} ${o.payment_method==='cod'?'<span class="chip">COD</span>':'<span class="chip">Online</span>'}
             <div class="meta">${esc(o.items_text)} — <b>${money(o.total)}</b></div>
-            ${orderStlLinks(o.items_text)}
+            ${orderStlLinks(o.items_text, o.customization_note)}
             <div class="meta">${esc(o.address)}</div>
             ${(o.customization_note||o.customization_photo_url)?`<div class="meta" style="color:var(--molten)">🎨 ${o.customization_note?esc(o.customization_note):""}${o.customization_photo_url?' · '+o.customization_photo_url.split(", ").map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">Photo</a>`).join(", "):""}</div>`:""}
             <div class="meta mono">${new Date(o.created_at).toLocaleString("en-IN")} · ${esc(o.payment_id||"")}${o.order_id?" · "+esc(o.order_id):""}</div></div>
