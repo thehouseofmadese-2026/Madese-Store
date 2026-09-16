@@ -1744,6 +1744,7 @@ function renderProductsTab(){
           <div><b>${esc(p.name)}</b><div class="meta">${esc(p.collection)} · ${money(p.price)} <s>${money(p.mrp)}</s></div></div>
         </div>
         <div class="row-actions">
+          ${p.stl?`<a class="icon-btn" href="${esc(p.stl)}" target="_blank" rel="noopener" style="text-decoration:none">🖨️ STL</a>`:""}
           <button class="icon-btn" onclick="editProduct(${i})">Edit</button>
           <button class="icon-btn danger" onclick="deleteProduct(${i})">Delete</button>
         </div>
@@ -1752,7 +1753,7 @@ function renderProductsTab(){
      <div id="productForm"></div>`;
 }
 function editProduct(i){
-  const p = i>=0 ? SITE.products[i] : { id:"", name:"", collection:(SITE.collections[0]||{}).name||"", price:499, mrp:599, specs:[], img:"", imgNote:"PHOTO: describe the shot you want here", desc:"", gallery:[], variants:[], showVariants:false, colors:[], showColors:false };
+  const p = i>=0 ? SITE.products[i] : { id:"", name:"", collection:(SITE.collections[0]||{}).name||"", price:499, mrp:599, specs:[], img:"", imgNote:"PHOTO: describe the shot you want here", desc:"", gallery:[], variants:[], showVariants:false, colors:[], showColors:false, stl:"" };
   window.pfGallery = (p.gallery||[]).slice();   // working copy of extra photos
   window.pfVariants = (p.variants||[]).map(v=>({...v}));   // working copy of design options
   window.pfColors = (p.colors||[]).map(v=>({...v}));       // working copy of color options
@@ -1764,6 +1765,8 @@ function editProduct(i){
     <div class="field" style="flex:1"><label>MRP / crossed price (₹)</label><input id="pf_mrp" type="number" value="${p.mrp}"></div></div>
     <div class="field"><label>Spec chips (comma separated, 2–4 short ones)</label><input id="pf_specs" value="${esc((p.specs||[]).join(", "))}"></div>
     <div class="field"><label>Description (shown on the product page)</label><textarea id="pf_desc" style="min-height:110px">${esc(p.desc||"")}</textarea></div>
+    <div class="field"><label>🔒 STL file link (admin only — never shown to customers)</label><input id="pf_stl" placeholder="https://drive.google.com/..." value="${esc(p.stl||"")}">
+      <div class="meta">Paste a link to wherever you keep this product's print file (Drive, Dropbox, etc). It'll show up as a quick-open link on the Orders tab.</div></div>
     <div class="field"><label>Main photo (the one on the card)</label><input id="pf_img" type="file" accept="image/*">
       ${p.img?`<div class="meta">Main photo set ✓ — choose a file to replace, or <button class="icon-btn" onclick="pfClearImg=true;this.textContent='will remove on save'">remove</button></div>`:""}</div>
     <div class="field"><label>Extra photos (gallery — shown as thumbnails on the product page)</label>
@@ -1822,6 +1825,7 @@ function saveProduct(i){
       price: Number($("pf_price").value)||0, mrp: Number($("pf_mrp").value)||0,
       specs: $("pf_specs").value.split(",").map(s=>s.trim()).filter(Boolean),
       desc: $("pf_desc").value,
+      stl: $("pf_stl").value.trim(),
       img: img, imgNote: (i>=0?SITE.products[i].imgNote:"") || "PHOTO needed",
       gallery: (window.pfGallery||[]).slice(),
       showVariants: $("pf_showVariants").checked,
@@ -1943,6 +1947,18 @@ alter table orders add column if not exists payment_method text default 'online'
 alter table orders add column if not exists customization_note text;
 alter table orders add column if not exists customization_photo_url text;`;
 
+/* Admin-only: match order line items back to each product's STL link so it can
+   be opened with one click while fulfilling — never shown to customers. */
+function orderStlLinks(itemsText){
+  if(!itemsText) return "";
+  const links = itemsText.split(",").map(s=>s.trim()).map(entry=>{
+    const m = entry.match(/^(.*)\sx\d+$/);
+    const name = m ? m[1].trim() : entry;
+    const p = SITE.products.find(x=>x.name===name);
+    return (p && p.stl) ? `<a href="${esc(p.stl)}" target="_blank" rel="noopener" class="icon-btn" style="text-decoration:none;display:inline-block">🖨️ ${esc(p.name)} STL</a>` : "";
+  }).filter(Boolean);
+  return links.length ? `<div class="meta" style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${links.join("")}</div>` : "";
+}
 function renderOrdersTab(){
   const el = $("tab-orders");
   if(!supaConfigured()){
@@ -1975,6 +1991,7 @@ function renderOrdersTab(){
         <div class="admin-row">
           <div style="flex:1;min-width:220px"><b>${esc(o.customer_name)}</b> · ${esc(o.phone)} ${o.payment_method==='cod'?'<span class="chip">COD</span>':'<span class="chip">Online</span>'}
             <div class="meta">${esc(o.items_text)} — <b>${money(o.total)}</b></div>
+            ${orderStlLinks(o.items_text)}
             <div class="meta">${esc(o.address)}</div>
             ${(o.customization_note||o.customization_photo_url)?`<div class="meta" style="color:var(--molten)">🎨 ${o.customization_note?esc(o.customization_note):""}${o.customization_photo_url?' · '+o.customization_photo_url.split(", ").map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">Photo</a>`).join(", "):""}</div>`:""}
             <div class="meta mono">${new Date(o.created_at).toLocaleString("en-IN")} · ${esc(o.payment_id||"")}${o.order_id?" · "+esc(o.order_id):""}</div></div>
