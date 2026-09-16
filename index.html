@@ -143,6 +143,9 @@ section{padding:72px 0}
 .pdp-thumbs{display:flex;gap:8px;padding:12px;flex-wrap:wrap;border-top:2px solid var(--ink);background:#fff}
 .pdp-thumb{width:60px;height:60px;border:2px solid var(--ink);border-radius:8px;cursor:pointer;background:repeating-linear-gradient(0deg,#eceae3 0 6px,#f5f3ec 6px 12px);background-size:cover!important;background-position:center!important;opacity:.55}
 .pdp-thumb.active{opacity:1;border-color:var(--molten)}
+.pdp-opt-row{display:flex;gap:8px;flex-wrap:wrap}
+.pdp-swatch{width:36px;height:36px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;background-size:cover!important;background-position:center!important;opacity:.7}
+.pdp-swatch.active{opacity:1;box-shadow:0 0 0 2px var(--molten)}
 .pdp-info{padding:32px 28px;display:flex;flex-direction:column;gap:14px}
 .pdp-info .series-badge{align-self:flex-start;background:var(--signal);color:#fff;border:2px solid var(--ink);border-radius:8px;padding:3px 12px;font-weight:700;font-size:12px}
 .pdp-info h2{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:32px;line-height:1}
@@ -1345,8 +1348,10 @@ function productImages(p){
   (p.gallery||[]).forEach(g=>{ if(g) imgs.push(g); });
   return imgs;
 }
+let pdpCurrentId = null, pdpSelectedVariant = null, pdpSelectedColor = null;
 function openPdp(id){
   const p = SITE.products.find(x=>x.id===id); if(!p) return;
+  pdpCurrentId = id; pdpSelectedVariant = null; pdpSelectedColor = null;
   const imgs = productImages(p);
   const save = p.mrp>p.price ? Math.round((1-p.price/p.mrp)*100) : 0;
   showPdpImage(imgs[0]||"", p.imgNote);
@@ -1358,6 +1363,20 @@ function openPdp(id){
     <div class="pdp-price"><span class="price">${money(p.price)}</span>${p.mrp>p.price?`<span class="strike">${money(p.mrp)}</span><span class="save-tag" style="position:static;transform:none">SAVE ${save}%</span>`:""}</div>
     <div class="pdp-specs">${(p.specs||[]).map(s=>`<span class="chip">${esc(s)}</span>`).join("")}</div>
     <p class="pdp-desc">${esc(p.desc||"")}</p>
+    ${p.showVariants && (p.variants||[]).length ? `
+    <div class="pdp-variants" style="margin-bottom:16px">
+      <div style="font-weight:700;margin-bottom:8px">Design</div>
+      <div class="pdp-opt-row">${p.variants.map((v,vi)=>
+        `<div class="pdp-thumb" data-variant="${vi}" style="${v.img?`background:url('${v.img}')`:""}" title="${esc(v.name||"")}" onclick="pickVariant(${vi})"></div>`).join("")}</div>
+      <div class="meta" id="pdpVariantLabel" style="margin-top:4px">&nbsp;</div>
+    </div>` : ""}
+    ${p.showColors && (p.colors||[]).length ? `
+    <div class="pdp-colors" style="margin-bottom:16px">
+      <div style="font-weight:700;margin-bottom:8px">Color</div>
+      <div class="pdp-opt-row">${p.colors.map((c,ci)=>
+        `<div class="pdp-swatch" data-color="${ci}" style="background:${c.img?`url('${c.img}')`:esc(c.swatch||"#cccccc")}" title="${esc(c.name||"")}" onclick="pickColor(${ci})"></div>`).join("")}</div>
+      <div class="meta" id="pdpColorLabel" style="margin-top:4px">&nbsp;</div>
+    </div>` : ""}
     ${isCustomizableProduct(p) ? `
     <div class="pdp-customize" style="border:2px dashed var(--ink);border-radius:12px;padding:14px;margin-bottom:16px">
       <div style="font-weight:700;margin-bottom:8px">🎨 Customize this (optional)</div>
@@ -1381,9 +1400,25 @@ function showPdpImage(img, note){
   else { el.style.background = ""; el.innerHTML = `<div class="ph-label">${esc(note||"Add photos in Admin → Products")}</div>`; }
 }
 function pickPdpImage(thumb, encImg){
-  document.querySelectorAll(".pdp-thumb").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".pdp-thumb:not([data-variant])").forEach(t=>t.classList.remove("active"));
   thumb.classList.add("active");
   showPdpImage(decodeURIComponent(encImg), "");
+}
+function pickVariant(i){
+  const p = SITE.products.find(x=>x.id===pdpCurrentId); if(!p) return;
+  const v = (p.variants||[])[i]; if(!v) return;
+  pdpSelectedVariant = i;
+  document.querySelectorAll(".pdp-thumb[data-variant]").forEach(t=>t.classList.toggle("active", Number(t.dataset.variant)===i));
+  const lbl = $("pdpVariantLabel"); if(lbl) lbl.textContent = "Selected: " + (v.name||"—");
+  if(v.img) showPdpImage(v.img, "");
+}
+function pickColor(i){
+  const p = SITE.products.find(x=>x.id===pdpCurrentId); if(!p) return;
+  const c = (p.colors||[])[i]; if(!c) return;
+  pdpSelectedColor = i;
+  document.querySelectorAll(".pdp-swatch[data-color]").forEach(t=>t.classList.toggle("active", Number(t.dataset.color)===i));
+  const lbl = $("pdpColorLabel"); if(lbl) lbl.textContent = "Selected: " + (c.name||"—");
+  if(c.img) showPdpImage(c.img, "");
 }
 function closePdp(){ $("pdpOverlay").classList.remove("open"); document.body.style.overflow = ""; }
 
@@ -1432,16 +1467,22 @@ function addCustomToCart(id, note, photoUrl){
 }
 async function addToCartFromPdp(id){
   const p = SITE.products.find(x=>x.id===id); if(!p) return;
-  if(!isCustomizableProduct(p)){ addToCart(id); closePdp(); return; }
-  const photoInput = $("pdpCzPhoto"), noteInput = $("pdpCzNote");
+  const variant = p.showVariants ? (p.variants||[])[pdpSelectedVariant] : null;
+  const color = p.showColors ? (p.colors||[])[pdpSelectedColor] : null;
+  const custom = isCustomizableProduct(p);
+  const photoInput = custom ? $("pdpCzPhoto") : null, noteInput = custom ? $("pdpCzNote") : null;
   const note = noteInput ? noteInput.value.trim() : "";
   const file = photoInput && photoInput.files[0];
-  if(!note && !file){ addToCart(id); closePdp(); return; }
+  if(!variant && !color && !note && !file){ addToCart(id); closePdp(); return; }
   const btn = $("pdpAddBtn");
-  if(btn){ btn.disabled = true; btn.textContent = "Uploading…"; }
+  if(btn){ btn.disabled = true; btn.textContent = file ? "Uploading…" : "Adding…"; }
   try{
     const photoUrl = file ? await uploadCustomizationPhoto(file, id) : "";
-    addCustomToCart(id, note, photoUrl);
+    const bits = [];
+    if(variant) bits.push("Design: "+variant.name);
+    if(color) bits.push("Color: "+color.name);
+    if(note) bits.push(note);
+    addCustomToCart(id, bits.join(" · "), photoUrl);
     closePdp();
   }catch(e){
     alert("Couldn't upload your photo: "+e.message+"\n\nYou can still add this to your queue without it — just mention the details on WhatsApp after ordering.");
@@ -1480,8 +1521,12 @@ function renderCart(){
   $("cartItems").innerHTML = items.length ? items.map(([id,q])=>{
     const p = SITE.products.find(x=>x.id===baseProductId(id)); if(!p) return "";
     const cz = customDetails[id];
+    const czBits = cz ? [
+      isCustomizableProduct(p) ? (cz.photoUrl?'<a href="'+esc(cz.photoUrl)+'" target="_blank" rel="noopener">📎 Photo attached</a>':'📎 No photo') : "",
+      cz.note ? '"'+esc(cz.note.slice(0,80))+(cz.note.length>80?'…':'')+'"' : ""
+    ].filter(Boolean) : [];
     return `<div class="cart-item"><div><b>${esc(p.name)}</b>
-      ${cz ? `<div class="meta" style="max-width:220px">🎨 ${cz.photoUrl?'<a href="'+esc(cz.photoUrl)+'" target="_blank" rel="noopener">Photo attached</a>':'No photo'}${cz.note?' — "'+esc(cz.note.slice(0,80))+(cz.note.length>80?'…':'')+'"':''}</div>` : ""}
+      ${czBits.length ? `<div class="meta" style="max-width:220px">${czBits.join(" — ")}</div>` : ""}
       <div class="qty"><button onclick="changeQty('${esc(id)}',-1)">&minus;</button><span>${q}</span><button onclick="changeQty('${esc(id)}',1)">+</button></div></div>
       <div style="font-weight:700">${money(p.price*q)}</div></div>`;
   }).join("") : '<div class="empty-cart">Queue\'s empty.<br>Feed the printer. 🖨️</div>';
@@ -1707,8 +1752,10 @@ function renderProductsTab(){
      <div id="productForm"></div>`;
 }
 function editProduct(i){
-  const p = i>=0 ? SITE.products[i] : { id:"", name:"", collection:(SITE.collections[0]||{}).name||"", price:499, mrp:599, specs:[], img:"", imgNote:"PHOTO: describe the shot you want here", desc:"", gallery:[] };
+  const p = i>=0 ? SITE.products[i] : { id:"", name:"", collection:(SITE.collections[0]||{}).name||"", price:499, mrp:599, specs:[], img:"", imgNote:"PHOTO: describe the shot you want here", desc:"", gallery:[], variants:[], showVariants:false, colors:[], showColors:false };
   window.pfGallery = (p.gallery||[]).slice();   // working copy of extra photos
+  window.pfVariants = (p.variants||[]).map(v=>({...v}));   // working copy of design options
+  window.pfColors = (p.colors||[]).map(v=>({...v}));       // working copy of color options
   window.pfClearImg = false; window.pfCurrentImg = p.img||"";
   $("productForm").innerHTML = `<div class="admin-card"><h3>${i>=0?"Edit":"New"} product</h3>
     <div class="field"><label>Name</label><input id="pf_name" value="${esc(p.name)}"></div>
@@ -1723,9 +1770,17 @@ function editProduct(i){
       <div id="pf_galWrap" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>
       <input id="pf_gal" type="file" accept="image/*" multiple>
       <div class="meta">Pick one or more — they add to the gallery. Click a thumbnail below to remove it.</div></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input id="pf_showVariants" type="checkbox" ${p.showVariants?"checked":""} style="width:auto"> Show a "Design" picker on this product's page</label>
+      <div id="pf_variantsWrap" style="display:flex;flex-direction:column;gap:8px;margin:8px 0"></div>
+      <button class="icon-btn" type="button" onclick="window.pfVariants.push({name:'',img:''});renderPfVariants()">+ Add design</button>
+      <div class="meta">Each design gets its own name and photo. Customers tap one to see that design's photo instead of the main one.</div></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input id="pf_showColors" type="checkbox" ${p.showColors?"checked":""} style="width:auto"> Show a "Color" picker on this product's page</label>
+      <div id="pf_colorsWrap" style="display:flex;flex-direction:column;gap:8px;margin:8px 0"></div>
+      <button class="icon-btn" type="button" onclick="window.pfColors.push({name:'',swatch:'#cccccc',img:''});renderPfColors()">+ Add color</button>
+      <div class="meta">A photo is optional per color — without one, customers just see the swatch color as a hint.</div></div>
     <div style="display:flex;gap:10px"><button class="btn btn-solid btn-small" onclick="saveProduct(${i})">Save</button>
-    <button class="icon-btn" onclick="$('productForm').innerHTML='';window.pfGallery=[]">Cancel</button></div></div>`;
-  renderPfGallery();
+    <button class="icon-btn" onclick="$('productForm').innerHTML='';window.pfGallery=[];window.pfVariants=[];window.pfColors=[]">Cancel</button></div></div>`;
+  renderPfGallery(); renderPfVariants(); renderPfColors();
   $("pf_gal").addEventListener("change", e=>{
     const files = Array.from(e.target.files); let done = 0;
     files.forEach(f=>fileToDataURI(f, uri=>{ window.pfGallery.push(uri); if(++done===files.length){ renderPfGallery(); } }));
@@ -1738,6 +1793,27 @@ function renderPfGallery(){
     `<div class="mini-img" title="Click to remove" style="cursor:pointer;background:url('${g}')" onclick="window.pfGallery.splice(${i},1);renderPfGallery()"></div>`).join("")
     || `<span class="meta">No extra photos yet.</span>`;
 }
+function renderPfVariants(){
+  const w = $("pf_variantsWrap"); if(!w) return;
+  w.innerHTML = (window.pfVariants||[]).map((v,i)=>`
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="mini-img" style="${v.img?`background:url('${v.img}')`:""}"></div>
+      <input placeholder="Design name (e.g. Batman)" value="${esc(v.name||"")}" oninput="window.pfVariants[${i}].name=this.value" style="flex:1;border:2px solid var(--ink);border-radius:9px;padding:10px 12px">
+      <input type="file" accept="image/*" style="max-width:150px" onchange="if(this.files[0])fileToDataURI(this.files[0],uri=>{window.pfVariants[${i}].img=uri;renderPfVariants()})">
+      <button class="icon-btn danger" type="button" onclick="window.pfVariants.splice(${i},1);renderPfVariants()">Remove</button>
+    </div>`).join("") || `<span class="meta">No designs added yet.</span>`;
+}
+function renderPfColors(){
+  const w = $("pf_colorsWrap"); if(!w) return;
+  w.innerHTML = (window.pfColors||[]).map((c,i)=>`
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="mini-img" style="${c.img?`background:url('${c.img}')`:`background:${esc(c.swatch||"#cccccc")}`}"></div>
+      <input placeholder="Color name (e.g. Red)" value="${esc(c.name||"")}" oninput="window.pfColors[${i}].name=this.value" style="flex:1;border:2px solid var(--ink);border-radius:9px;padding:10px 12px">
+      <input type="color" value="${esc(c.swatch||"#cccccc")}" oninput="window.pfColors[${i}].swatch=this.value;renderPfColors()" style="width:44px;padding:2px">
+      <input type="file" accept="image/*" style="max-width:150px" onchange="if(this.files[0])fileToDataURI(this.files[0],uri=>{window.pfColors[${i}].img=uri;renderPfColors()})">
+      <button class="icon-btn danger" type="button" onclick="window.pfColors.splice(${i},1);renderPfColors()">Remove</button>
+    </div>`).join("") || `<span class="meta">No colors added yet.</span>`;
+}
 function saveProduct(i){
   const build = img => {
     const p = {
@@ -1747,11 +1823,15 @@ function saveProduct(i){
       specs: $("pf_specs").value.split(",").map(s=>s.trim()).filter(Boolean),
       desc: $("pf_desc").value,
       img: img, imgNote: (i>=0?SITE.products[i].imgNote:"") || "PHOTO needed",
-      gallery: (window.pfGallery||[]).slice()
+      gallery: (window.pfGallery||[]).slice(),
+      showVariants: $("pf_showVariants").checked,
+      variants: (window.pfVariants||[]).filter(v=>v.name||v.img).map(v=>({name:v.name||"",img:v.img||""})),
+      showColors: $("pf_showColors").checked,
+      colors: (window.pfColors||[]).filter(c=>c.name||c.img).map(c=>({name:c.name||"",swatch:c.swatch||"#cccccc",img:c.img||""}))
     };
     if(!p.name){ alert("Give the product a name."); return; }
     if(i>=0) SITE.products[i]=p; else SITE.products.push(p);
-    window.pfGallery = [];
+    window.pfGallery = []; window.pfVariants = []; window.pfColors = [];
     saveDraft(); renderProductsTab(); renderAll();
   };
   const f = $("pf_img").files[0];
