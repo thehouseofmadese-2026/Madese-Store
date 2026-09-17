@@ -2260,6 +2260,7 @@ let accSignupMode = false;
 
 const CART_LS_KEY = "madese_cart_v1";
 const CUSTOM_LS_KEY = "madese_custom_v1";
+const CART_SYNCED_UID_KEY = "madese_cart_synced_uid"; // which account's cart the local cart was last merged/synced with on this device
 
 function loadLocalCart(){
   try{
@@ -2312,14 +2313,24 @@ function initCustomerSession(){
 
 async function loadCustomerProfile(){
   const { data } = await supa.from("profiles").select("*").eq("id", customerUser.id).maybeSingle();
+  let syncedUid = null;
+  try{ syncedUid = localStorage.getItem(CART_SYNCED_UID_KEY); }catch(e){}
   if(data){
     customerProfile = data;
     const savedCart = data.cart || {};
-    if(Object.keys(cart).length === 0 && Object.keys(savedCart).length > 0){
+    if(syncedUid === customerUser.id){
+      // This device already synced its local cart into this account before (e.g. an earlier
+      // session, or a page reload) — the local copy IS the account cart, not a separate guest
+      // cart to add on top. Just adopt the server's copy as-is so quantities don't double
+      // every time the session is restored.
+      for(const k in cart) delete cart[k];
+      Object.assign(cart, savedCart);
+      renderCart();
+    } else if(Object.keys(cart).length === 0 && Object.keys(savedCart).length > 0){
       Object.assign(cart, savedCart);
       renderCart();
     } else if(Object.keys(cart).length > 0){
-      // local guest cart has items — merge into the account's saved cart
+      // Genuine first-time merge: a guest added items on this device before logging in.
       const merged = { ...savedCart };
       for(const [id,q] of Object.entries(cart)) merged[id] = (merged[id]||0) + q;
       for(const k in cart) delete cart[k];
@@ -2333,6 +2344,7 @@ async function loadCustomerProfile(){
     customerProfile = { name: googleName, phone:"", address:"", pincode:"", wishlist:[], cart:{...cart} };
     await supa.from("profiles").upsert({ id: customerUser.id, ...customerProfile });
   }
+  try{ localStorage.setItem(CART_SYNCED_UID_KEY, customerUser.id); }catch(e){}
 }
 
 /* ── Login / signup UI ── */
@@ -2369,7 +2381,9 @@ function accountSignup(){
     if(error){ accNoteMsg(error.message); return; }
     if(!data.user){ accNoteMsg("Check your email to confirm your account, then log in."); return; }
     customerUser = data.user;
-    await supa.from("profiles").upsert({ id: customerUser.id, name, wishlist: [], cart });
+    // Seed the new profile with an empty cart — loadCustomerProfile() below merges the
+    // current guest cart in exactly once. Pre-filling it here too would double it immediately.
+    await supa.from("profiles").upsert({ id: customerUser.id, name, wishlist: [], cart: {} });
     await loadCustomerProfile();
     finishLogin();
   });
