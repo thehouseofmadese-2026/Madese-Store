@@ -1626,7 +1626,7 @@ async function payCod(btn, name, phone, fullAddr){
       console.warn("Order not saved to database:", data.dbError);
       alert("Order placed! Ref: "+data.ref+"\nTotal due on delivery: "+money(data.total)+
         "\n\n⚠️ NOTE FOR STORE OWNER: this order did NOT save to your database.\nReason: "+(data.dbError||"unknown")+
-        "\n\nVisit /api/check-setup on your site to diagnose.");
+        "\n\nUse the Diagnostics button in Admin → Settings to see why.");
     } else {
       alert("Order placed! Ref: "+data.ref+"\nWe'll confirm on WhatsApp before it goes to print — total due on delivery: "+money(data.total));
     }
@@ -2125,6 +2125,14 @@ function renderSettingsTab(){
     <div class="field"><label>Supabase Project URL (for reading orders)</label><input id="st_surl" value="${esc(SITE.supabaseUrl)}" placeholder="https://xxxx.supabase.co"></div>
     <div class="field"><label>Supabase anon public key (for reading orders)</label><input id="st_skey" value="${esc(SITE.supabaseAnonKey)}" placeholder="eyJ..."></div>
     <div class="note">Fill these two after the Supabase setup in the Orders tab. Once published, admin login switches to your Supabase email + password.</div></div>
+  <div class="admin-card"><h3>Diagnostics</h3>
+    <div class="note">Checks whether your Razorpay/Supabase server keys are configured correctly.
+    <code class="k">/api/check-setup</code> now requires an owner login — a one-time setup step: log into
+    an account here (Account → Login/Create account) using the email you want as owner, then in your
+    Supabase dashboard go to Authentication → that user → Edit → set <code class="k">app_metadata</code>
+    to <code class="k">{"role":"owner"}</code> and save. Only that account can run diagnostics.</div>
+    <button class="icon-btn" onclick="runDiagnostics()">Run diagnostics</button>
+    <div id="diagBox"></div></div>
   <button class="btn btn-solid btn-small" onclick="saveSettings()">Save settings</button>`;
 }
 function showCouponSync(){
@@ -2138,6 +2146,20 @@ function showPriceSync(){
   const json = "[\n" + SITE.products.map(p=>`  { "id": "${p.id}", "name": ${JSON.stringify(p.name)}, "price": ${p.price} }`).join(",\n") + "\n]";
   $("priceSyncBox").innerHTML = `<pre class="sqlbox">${esc(json)}</pre>
     <button class="icon-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent).then(()=>alert('Copied — paste this into products.json, then re-upload that file to GitHub.'))">Copy products.json</button>`;
+}
+async function runDiagnostics(){
+  const box = $("diagBox");
+  box.innerHTML = "Checking…";
+  try{
+    const token = await getAccessToken();
+    if(!token){ box.innerHTML = '<div class="note">Log into an account first (Account → Login), using the email you\'ve marked as owner in Supabase — see the note above.</div>'; return; }
+    const res = await fetch("/api/check-setup", { headers: { Authorization: "Bearer " + token } });
+    const data = await res.json();
+    if(!res.ok){ box.innerHTML = `<div class="note">${esc(data.error || "Owner login required.")}</div>`; return; }
+    box.innerHTML = `<pre class="sqlbox">${esc(JSON.stringify(data, null, 2))}</pre>`;
+  }catch(e){
+    box.innerHTML = `<div class="note">Couldn't run diagnostics: ${esc(e.message)}</div>`;
+  }
 }
 function saveSettings(){
   SITE.brand.whatsapp=$("st_wa").value.trim();

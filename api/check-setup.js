@@ -1,11 +1,22 @@
 // ─────────────────────────────────────────────────────────────
 //  /api/check-setup — a diagnostic page for the owner.
-//  Visit https://YOUR-SITE/api/check-setup in a browser and it
-//  tells you exactly which server keys are set and whether the
-//  database connection actually works. Safe: it never prints
-//  your keys, only whether they look right.
+//  Owner-only: even though it never prints full secret values, it
+//  does confirm which keys are configured and their formats/lengths,
+//  which is more than a stranger should be able to learn about your
+//  infrastructure for free. Call it from the admin panel's
+//  Diagnostics button (sends your logged-in owner session token) -
+//  it's no longer a plain URL you can just visit.
 // ─────────────────────────────────────────────────────────────
+import { requireOwner } from "./_resolveCustomer.js";
+
 export default async function handler(req, res) {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : (req.query.access_token || "");
+  if (!(await requireOwner(token))) {
+    res.status(401).json({ error: "Owner login required. Use the Diagnostics button in the admin panel." });
+    return;
+  }
+
   const out = { checks: [], verdict: "" };
 
   const add = (name, ok, detail) => out.checks.push({ name, ok, detail });
