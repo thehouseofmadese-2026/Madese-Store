@@ -1469,8 +1469,8 @@ function closePolicy(){ $("policyOverlay").classList.remove("open"); document.bo
 document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ closePdp(); closePolicy(); closeAccount(); } });
 
 /* ── Cart & checkout ── */
-function addToCart(id){ cart[id]=(cart[id]||0)+1; renderCart(); toggleCart(true); cartCelebrate(); persistCart(); }
-function changeQty(id,d){ cart[id]=(cart[id]||0)+d; if(cart[id]<=0){ delete cart[id]; delete customDetails[id]; } renderCart(); persistCart(); }
+function addToCart(id){ cart[id]=Math.min(MAX_CART_QTY,(cart[id]||0)+1); renderCart(); toggleCart(true); cartCelebrate(); persistCart(); }
+function changeQty(id,d){ cart[id]=Math.min(MAX_CART_QTY,(cart[id]||0)+d); if(cart[id]<=0){ delete cart[id]; delete customDetails[id]; } renderCart(); persistCart(); }
 
 /* ── Customize-on-checkout: photo + note attached to one queue entry ── */
 const CZ_ALLOWED = { "image/jpeg":1, "image/png":1, "image/webp":1, "image/heic":1, "image/heif":1 };
@@ -2302,6 +2302,21 @@ const CART_LS_KEY = "madese_cart_v1";
 const CUSTOM_LS_KEY = "madese_custom_v1";
 const CART_SYNCED_UID_KEY = "madese_cart_synced_uid"; // which account's cart the local cart was last merged/synced with on this device
 
+const MAX_CART_QTY = 50; // matches the server-side per-item cap in create-order.js / create-cod-order.js
+// Repairs any bad quantity already sitting in the cart (leftover from the fixed doubling bug, or any
+// other corruption) — clamps to a sane max and drops anything non-numeric/zero/negative. Self-healing:
+// runs every time the cart is loaded or merged, so a bad number fixes itself on next visit instead of
+// needing a manual localStorage/Supabase reset.
+function sanitizeCart(){
+  let changed = false;
+  for(const id in cart){
+    const q = Math.floor(Number(cart[id]));
+    if(!Number.isFinite(q) || q<=0){ delete cart[id]; changed = true; }
+    else if(q>MAX_CART_QTY){ cart[id] = MAX_CART_QTY; changed = true; }
+    else if(q !== cart[id]){ cart[id] = q; changed = true; }
+  }
+  return changed;
+}
 function loadLocalCart(){
   try{
     const raw = localStorage.getItem(CART_LS_KEY);
@@ -2311,6 +2326,7 @@ function loadLocalCart(){
     const raw = localStorage.getItem(CUSTOM_LS_KEY);
     if(raw){ const obj = JSON.parse(raw); Object.assign(customDetails, obj); }
   }catch(e){}
+  if(sanitizeCart()) persistCart();
 }
 
 let cartSaveTimer = null;
@@ -2358,6 +2374,7 @@ async function loadCustomerProfile(){
   if(data){
     customerProfile = data;
     const savedCart = data.cart || {};
+    let cartChanged = false;
     if(syncedUid === customerUser.id){
       // This device already synced its local cart into this account before (e.g. an earlier
       // session, or a page reload) — the local copy IS the account cart, not a separate guest
@@ -2365,16 +2382,23 @@ async function loadCustomerProfile(){
       // every time the session is restored.
       for(const k in cart) delete cart[k];
       Object.assign(cart, savedCart);
-      renderCart();
+      cartChanged = true;
     } else if(Object.keys(cart).length === 0 && Object.keys(savedCart).length > 0){
       Object.assign(cart, savedCart);
-      renderCart();
+      cartChanged = true;
     } else if(Object.keys(cart).length > 0){
       // Genuine first-time merge: a guest added items on this device before logging in.
       const merged = { ...savedCart };
       for(const [id,q] of Object.entries(cart)) merged[id] = (merged[id]||0) + q;
       for(const k in cart) delete cart[k];
       Object.assign(cart, merged);
+      cartChanged = true;
+    }
+    if(cartChanged){
+      // Repair any bad quantity that was already saved (e.g. from the fixed doubling bug) and
+      // push the corrected value back to the account, so it fixes itself for good on this load
+      // instead of needing a manual reset.
+      sanitizeCart();
       renderCart();
       persistCart();
     }
