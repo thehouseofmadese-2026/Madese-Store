@@ -102,6 +102,8 @@ nav{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:2px s
 .btn-small{padding:8px 16px;font-size:13px;border-radius:9px}
 .hero-art{position:relative;border-left:2px solid var(--ink);background:repeating-linear-gradient(0deg,var(--molten) 0 10px,#ff6f3d 10px 20px);background-size:cover;background-position:center}
 .hero-art .ph{position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px 20px 56px}
+.hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .8s ease}
+.hero-slide.active{opacity:1}
 .now-printing{position:absolute;left:0;right:0;bottom:0;background:var(--ink);color:var(--paper);font-family:'Space Mono',monospace;font-size:12px;padding:10px 16px;display:flex;justify-content:space-between;letter-spacing:.08em}
 .now-printing b{color:var(--marigold)}
 @media(max-width:820px){.hero-in{grid-template-columns:1fr}.hero-art{min-height:300px;border-left:none;border-top:2px solid var(--ink)}}
@@ -357,6 +359,8 @@ pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font
       </div>
     </div>
     <div class="hero-art" id="heroArt">
+      <div class="hero-slide" id="heroSlideA"></div>
+      <div class="hero-slide" id="heroSlideB"></div>
       <div class="ph" id="heroPh"><div class="ph-label">PHOTO SLOT — HERO: your best lamp shade, lit, dark table, vertical crop.</div></div>
       <div class="now-printing mono" id="nowPrinting">NOW PRINTING: <b>HALO VORONOI · 62%</b> · PETG · 0.2MM</div>
     </div>
@@ -1233,6 +1237,29 @@ const customDetails = {};
 function baseProductId(id){ const i=id.indexOf("~cz~"); return i===-1?id:id.slice(0,i); }
 function isCustomizableProduct(p){ if(!p) return false; const c = SITE.collections.find(x=>x.name===p.collection); return !!(c&&c.customizable); }
 
+/* Hero carousel: auto-rotates through product hero photos every 3s when no manual hero photo is set (Admin → Content) */
+let heroTimer = null;
+function stopHeroCarousel(){
+  if(heroTimer){ clearInterval(heroTimer); heroTimer=null; }
+  ["heroSlideA","heroSlideB"].forEach(id=>{ const el=$(id); el.style.backgroundImage=""; el.classList.remove("active"); });
+}
+function startHeroCarousel(imgs){
+  stopHeroCarousel();
+  const a = $("heroSlideA"), b = $("heroSlideB");
+  a.style.backgroundImage = `url('${imgs[0]}')`;
+  a.classList.add("active");
+  if(imgs.length<2) return;
+  let i = 0, onA = true;
+  heroTimer = setInterval(()=>{
+    i = (i+1) % imgs.length;
+    const next = onA ? b : a, cur = onA ? a : b;
+    next.style.backgroundImage = `url('${imgs[i]}')`;
+    next.classList.add("active");
+    cur.classList.remove("active");
+    onA = !onA;
+  }, 3000);
+}
+
 function renderAll(){
   const B = SITE.brand;
   $("logoTop").innerHTML = `${esc(B.name)} <em>${esc(B.accent)}</em>`;
@@ -1248,8 +1275,16 @@ function renderAll(){
   $("heroSub").textContent = H.sub;
   $("heroCta1").textContent = H.cta1;
   $("heroCta2").textContent = H.cta2;
-  if(H.img){ $("heroArt").style.background = `url('${H.img}') center/cover no-repeat`; $("heroPh").innerHTML=""; }
-  else { $("heroArt").style.background=""; $("heroPh").innerHTML = `<div class="ph-label">${esc(H.imgNote)}</div>`; }
+  if(H.img){
+    stopHeroCarousel();
+    $("heroArt").style.background = `url('${H.img}') center/cover no-repeat`;
+    $("heroPh").innerHTML="";
+  } else {
+    $("heroArt").style.background="";
+    const heroImgs = SITE.products.map(p=>p.img).filter(Boolean);
+    if(heroImgs.length){ $("heroPh").innerHTML=""; startHeroCarousel(heroImgs); }
+    else { stopHeroCarousel(); $("heroPh").innerHTML = `<div class="ph-label">${esc(H.imgNote)}</div>`; }
+  }
   $("nowPrinting").innerHTML = H.nowPrinting;
 
   $("colTitle").textContent = SITE.collectionsSection.title;
