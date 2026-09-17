@@ -49,7 +49,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Space+Grotesk:wght@400;500;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script><script src="https://cdn.razorpay.com/static/cx/razorpay-risk-detection/bundle.js" async=""></script><script src="https://cdn.razorpay.com/static/cx/razorpay-risk-detection/bundle.js" async=""></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
 :root{
   --paper:#FAFAF7; --ink:#16150F; --molten:#FF5A1F; --molten-a11y:#B23E15; --signal:#2B4BFF; --marigold:#FFD23F;
@@ -329,7 +329,7 @@ footer{background:var(--ink);color:var(--paper);padding:56px 0 28px}
 code.k{background:#f1efe8;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-family:'Space Mono',monospace;font-size:12px}
 pre.sqlbox{background:#16150F;color:#d5f5d0;border-radius:10px;padding:14px;font-family:'Space Mono',monospace;font-size:11.5px;overflow-x:auto;white-space:pre-wrap;margin:10px 0}
 </style>
-<link rel="stylesheet" type="text/css" href="chrome-extension://pefhciejnkgdgoahgfeklebcbpmhnhhd/css/content-shared.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><link rel="stylesheet" type="text/css" href="chrome-extension://pefhciejnkgdgoahgfeklebcbpmhnhhd/css/content-lite.css"></head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body>
 
 <div class="marquee" aria-hidden="true"><div class="marquee-track" id="marqueeTrack"><span>🔥 LAUNCH OFFER — FLAT 20% OFF · CODE: <b>FIRSTLAYER</b></span><span>⚡ MADE IN INDIA. LAYER BY LAYER.</span><span>📦 SHIPS IN 48 HOURS</span><span>💬 ORDER HELP ON WHATSAPP</span><span>🔥 LAUNCH OFFER — FLAT 20% OFF · CODE: <b>FIRSTLAYER</b></span><span>⚡ MADE IN INDIA. LAYER BY LAYER.</span><span>📦 SHIPS IN 48 HOURS</span><span>💬 ORDER HELP ON WHATSAPP</span></div></div>
@@ -2153,6 +2153,22 @@ function saveSettings(){
 
 /* ── Preview & publish ── */
 function previewDraft(){ closeAdmin(); }
+/* Publish serializes the LIVE page DOM, so anything a browser extension injected into this tab
+   (chrome-extension:// links/scripts) or a third-party script re-injected at runtime (e.g. Razorpay's
+   checkout.js appending its own risk-detection <script> on load) would otherwise get baked permanently
+   into the published index.html — and duplicate a little more each time someone publishes. Strip those
+   out of a detached clone before serializing, so the live admin page itself is never touched. */
+function sanitizePublishedDom(root){
+  root.querySelectorAll(
+    'link[href^="chrome-extension://"], link[href^="moz-extension://"], link[href^="safari-extension://"], ' +
+    'script[src^="chrome-extension://"], script[src^="moz-extension://"], script[src^="safari-extension://"]'
+  ).forEach(el=>el.remove());
+  const seen = new Set();
+  root.querySelectorAll('head script[src], head link[rel="stylesheet"][href]').forEach(el=>{
+    const key = el.tagName + ":" + (el.getAttribute("src") || el.getAttribute("href"));
+    if(seen.has(key)) el.remove(); else seen.add(key);
+  });
+}
 function publishSite(){
   try{
     const clone = SITE;
@@ -2165,7 +2181,9 @@ function publishSite(){
     $("policyOverlay") && $("policyOverlay").classList.remove("open");
     $("accountOverlay") && $("accountOverlay").classList.remove("open");
     $("mMenu").classList.remove("open");
-    const html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    const docClone = document.documentElement.cloneNode(true);
+    sanitizePublishedDom(docClone);
+    const html = "<!DOCTYPE html>\n" + docClone.outerHTML;
     const blob = new Blob([html], {type:"text/html"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
