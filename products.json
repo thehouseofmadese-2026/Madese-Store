@@ -5,5 +5,6 @@
   { "id": "desk-rebel", "name": "Desk Rebel Pen Stand", "price": 399 },
   { "id": "grip-halo", "name": "Grip Halo MagSafe Stand", "price": 549 },
   { "id": "facet-wall", "name": "Facet Wall Art — Set of 3", "price": 1299 },
-  { "id": "customized-photo-lamps-lithopane", "name": "Customized photo lamps (lithopane)", "price": 698 }
+  { "id": "customized-photo-lamps-lithopane", "name": "Customized photo lamps (lithopane)", "price": 698 },
+  { "id": "cumulis-table-lamp", "name": "Cumulis Table Lamp", "price": 899 }
 ]
