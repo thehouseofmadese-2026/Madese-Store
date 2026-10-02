@@ -38,17 +38,21 @@ If the matched collection has `hasSubcollections: true` and Mayank mentioned a s
 
 ## Step 3 — Generate photos with Gemini (via Madese Photo Studio)
 
-Don't reimplement Gemini calls here — this project has no Gemini key of its own by design. Reuse the wrapper already built in the sibling project by running `scripts/gen_product_photos.py` with **that project's venv Python**:
+Don't reimplement Gemini calls here — this project has no Gemini key of its own by design. Reuse the wrapper *and* the live instruction library already built in the sibling project by running `scripts/gen_product_photos.py` with **that project's venv Python**:
 
 ```
 "C:\Users\mayan\OneDrive\Desktop\Madese Photo Studio\.venv\Scripts\python.exe" "C:\Users\mayan\OneDrive\Desktop\House of Madese\scripts\gen_product_photos.py" "<path to Mayank's reference photo>" "<one or two sentence product_context from step 1>" "<scratchpad output dir>"
 ```
 
-This writes `main.png` (clean white-background listing photo) and `lifestyle.png` (in-use lifestyle shot) into the output dir, and prints `OK <name>` / `FAIL <name>: <reason>` per image. Use the scratchpad directory for `<output dir>`.
+This reads `prompts.json` from Madese Photo Studio directly (so if Mayank edits that library later, this stays in sync automatically) and generates:
+- every instruction currently in the **"Clean Listing Photos"** tab — whichever one is titled "Pure White Isolated" (or the first one, if that title's gone) is saved as `main.png`; the rest are saved as `<slug-of-title>.png`
+- the **"Conceptual Print Ad"** instruction from the **"Lifestyle Shots"** tab (with its own style reference images, pulled automatically), saved as `conceptual-print-ad.png`
 
-- If `main.png` succeeds, that becomes the product's `img`.
-- If it fails, fall back to using Mayank's original reference photo as `img` instead (don't block the whole task over one failed generation — note the failure in your final summary).
-- If `lifestyle.png` succeeds, add it to `gallery`; if it fails, just skip it (gallery can be shorter, that's fine).
+Prints `OK <slug>` / `FAIL <slug>: <reason>` per image — don't block the whole task over one failed generation. Use the scratchpad directory for `<output dir>`.
+
+- `main.png` → the product's `img`. If it failed, fall back to Mayank's original reference photo for `img` instead.
+- every other `OK` file → append to `gallery`, in whatever order they came back. Skip any that `FAIL`ed — gallery can be shorter, that's fine.
+- Note in your final summary which images succeeded/failed by name, not just a success count.
 
 ## Step 4 — Build the product object
 
