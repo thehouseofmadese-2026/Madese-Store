@@ -73,6 +73,7 @@ def main():
         None,
     )
 
+    AD_MODEL = "gemini-3-pro-image"  # best-quality model, used ONLY for the conceptual ad
     jobs = [(inst, i == main_idx) for i, inst in enumerate(clean_listing)]
     if conceptual_ad is not None:
         jobs.append((conceptual_ad, False))
@@ -88,6 +89,7 @@ def main():
                 inst["text"],
                 reference_images=load_reference_images(inst.get("reference_images", [])),
                 product_context=context,
+                model=AD_MODEL if inst is conceptual_ad else None,
             )
             result.save(os.path.join(out_dir, f"{slug}.png"))
             print(f"OK {slug}" + (" (main)" if is_main else ""))

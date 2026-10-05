@@ -159,8 +159,26 @@ def worker():
 
 
 # ---- message collection ----------------------------------------------------
+# Each product becomes its own job as soon as it is complete:
+#   - photo + link in one message (caption)            -> job right away
+#   - photo(s) then link, or link then photo           -> job when the second half arrives
+#   - an album (several photos sent together)          -> one job, after a short wait for all its photos
+# Products sent back-to-back are queued and processed one at a time.
 
-pending = {}  # chat_id -> {"photos": [...], "text": [...], "last": ts, "nudged": bool, "dir": str}
+units = {}  # key -> {"chat", "photos", "text", "last", "nudged", "album"}
+
+
+def new_unit(chat_id, album=False):
+    return {"chat": chat_id, "photos": [], "text": [], "last": time.time(), "nudged": False, "album": album,
+            "dir": os.path.join(WORK_ROOT, "incoming", datetime.now().strftime("%Y%m%d-%H%M%S-%f"))}
+
+
+def enqueue(unit):
+    chat_id = unit["chat"]
+    jobs.put((chat_id, unit["photos"], "\n".join(unit["text"])))
+    n = jobs.unfinished_tasks
+    if n > 1:
+        say(chat_id, f"Queued (#{n}): I'll start it as soon as the one before it finishes.")
 
 
 def on_message(msg):
@@ -176,51 +194,59 @@ def on_message(msg):
     text = (msg.get("text") or msg.get("caption") or "").strip()
     if text.lower() in ("/start", "/help"):
         say(chat_id, "Send me a product link + a photo of it (link in the caption or as a separate message). "
-                     "Optionally add a price and collection, e.g. '499 lamps'. I'll generate the photos, write the listing and publish it.")
+                     "Optionally add a price and collection, e.g. '499 lamps'. You can send several products in a row; "
+                     "I'll queue them and do them one by one.")
         return
     if text.lower() in ("/cancel", "cancel"):
-        p = pending.pop(chat_id, None)
-        say(chat_id, "Cleared." if p else "Nothing pending.")
+        had = units.pop(("partial", chat_id), None)
+        say(chat_id, "Cleared the half-sent request." if had else "Nothing half-sent. (Jobs already queued can't be cancelled.)")
         return
 
-    p = pending.setdefault(chat_id, {"photos": [], "text": [], "last": 0, "nudged": False,
-                                     "dir": os.path.join(WORK_ROOT, "incoming", datetime.now().strftime("%Y%m%d-%H%M%S"))})
-    os.makedirs(p["dir"], exist_ok=True)
+    has_photo = bool(msg.get("photo")) or (msg.get("document") or {}).get("mime_type", "").startswith("image/")
+    has_link = bool(URL_RE.search(text))
+    mg = msg.get("media_group_id")
+
+    if mg:                                    # part of an album: gather everything with the same id
+        key = ("album", mg)
+        unit = units.setdefault(key, new_unit(chat_id, album=True))
+    elif has_photo and has_link:              # self-contained product message
+        key = ("msg", msg["message_id"])
+        unit = units.setdefault(key, new_unit(chat_id))
+    else:                                     # half a product: park it until the other half arrives
+        key = ("partial", chat_id)
+        unit = units.setdefault(key, new_unit(chat_id))
+
+    os.makedirs(unit["dir"], exist_ok=True)
     try:
         if msg.get("photo"):
-            p["photos"].append(download(msg["photo"][-1]["file_id"], p["dir"]))
-        elif (msg.get("document") or {}).get("mime_type", "").startswith("image/"):
-            p["photos"].append(download(msg["document"]["file_id"], p["dir"]))
+            unit["photos"].append(download(msg["photo"][-1]["file_id"], unit["dir"]))
+        elif has_photo:
+            unit["photos"].append(download(msg["document"]["file_id"], unit["dir"]))
     except Exception as e:
         say(chat_id, f"❌ Couldn't download that photo: {e}")
         return
     if text:
-        p["text"].append(text)
-    p["last"] = time.time()
-    p["nudged"] = False
+        unit["text"].append(text)
+    unit["last"] = time.time()
+    unit["nudged"] = False
 
 
 def flush_pending():
     now = time.time()
-    for chat_id, p in list(pending.items()):
-        idle = now - p["last"]
-        text = "\n".join(p["text"])
-        has_link = bool(URL_RE.search(text))
-        if p["photos"] and has_link and idle >= SETTLE_S:
-            del pending[chat_id]
-            jobs.put((chat_id, p["photos"], text))
-            if jobs.unfinished_tasks > 1:
-                say(chat_id, "Queued: another product is still being processed.")
-        elif idle >= SETTLE_S and not p["nudged"] and (p["photos"] or p["text"]):
-            p["nudged"] = True
-            if p["photos"] and not has_link:
-                say(chat_id, "Got the photo. Now send the product link (or /cancel).")
-            elif has_link and not p["photos"]:
-                say(chat_id, "Got the link. Now send a photo of the product (or /cancel).")
+    for key, u in list(units.items()):
+        idle = now - u["last"]
+        complete = bool(u["photos"]) and bool(URL_RE.search("\n".join(u["text"])))
+        if complete and (not u["album"] or idle >= SETTLE_S):
+            del units[key]
+            enqueue(u)
+        elif idle >= SETTLE_S and not u["nudged"] and (u["photos"] or u["text"]):
+            u["nudged"] = True
+            if u["photos"]:
+                say(u["chat"], "Got the photo. Now send the product link (or /cancel).")
             else:
-                say(chat_id, "I need a product link and a photo.")
+                say(u["chat"], "Got the link. Now send a photo of the product (or /cancel).")
         elif idle > PENDING_TTL_S:
-            del pending[chat_id]
+            del units[key]
 
 
 def main():
