@@ -31,9 +31,13 @@ python -c "import re,json;d=json.loads(re.search(r'id=\"SITE_DATA\">(.*?)</scrip
 ## Step 3 — Generate the photos (Gemini via Madese Photo Studio)
 Output dir: `C:\Users\mayan\AppData\Local\Temp\madese-agent\<slug>-<timestamp>` (create it).
 ```
-"C:\Users\mayan\OneDrive\Desktop\Madese Photo Studio\.venv\Scripts\python.exe" "C:\Users\mayan\OneDrive\Desktop\House of Madese\scripts\gen_product_photos.py" "<photo path>" "<1-2 sentence product_context from step 1>" "<output dir>"
+"C:\Users\mayan\OneDrive\Desktop\Madese Photo Studio\.venv\Scripts\python.exe" "C:\Users\mayan\OneDrive\Desktop\House of Madese\scripts\gen_product_photos.py" "<photo path>" "<1-2 sentence product_context from step 1>" "<output dir>" "<ad concept>"
 ```
+`<ad concept>` is the 4th argument: the conceptual-ad idea YOU invent for this specific product (see below). Always pass it.
+
 Generates every "Clean Listing Photos" instruction (4 currently; "Pure White Isolated" → `main.png`) plus the "Conceptual Print Ad" → 5 images. Prints `OK <slug>` / `FAIL <slug>: <reason>`. Run it with a generous timeout (up to 10 min). If an image FAILs, retry that whole script once only if **3 or more** failed; otherwise carry on with what you have. If `main.png` is missing the publish script falls back to his original photo.
+
+**Ad concept (do this before running the script).** The image model is poor at inventing ideas but good at drawing one it is handed, so you decide the idea. Write 2-4 sentences covering: (1) ONE simple visual metaphor rooted in what this product physically does or its shape, easily understood in a glance; (2) exactly how the product appears in the scene (it must stay clearly visible, accurate, and the hero); (3) a headline of 2-6 words that is clever but plainly readable, no puns that need explaining; (4) a background colour that complements the product. Keep it drawable: one product, at most 1-2 supporting elements, no crowds, no tiny text beyond the headline. Sanity-check: could a stranger explain the ad in one sentence? If not, simplify. Example for a pen stand: "The pen stand is the skyline of a tiny city: the pens are towers rising from it against a warm cream background. Headline: 'Your Desk, Skyline.'"
 
 Make `product_context` factual and specific (what it is, how it's used, rough size) so Gemini doesn't mis-identify the object. The infographic prompt says to replace example callouts with the product's real features, so put 3–4 real features in the context too.
 
@@ -67,6 +71,7 @@ Exactly this shape, no markdown tables:
 ✅ Live: <name>
 Collection: <collection> · ₹<price> (MRP ₹<mrp>) [say "price inferred" if you chose it]
 Photos: <n>/5 generated (<list any that failed by name>)
+Ad idea: <the concept in one short sentence + headline>
 Link read: yes/no
 Live in ~1 min: https://www.houseofmadese.com/ (Admin → Products to tweak anything)
 ```

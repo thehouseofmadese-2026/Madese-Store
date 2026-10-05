@@ -3,7 +3,7 @@
 Reuses the Gemini wrapper AND the live instruction library from the sibling
 Madese Photo Studio project instead of duplicating either here. Run with
 THAT project's venv python:
-  "C:\\Users\\mayan\\OneDrive\\Desktop\\Madese Photo Studio\\.venv\\Scripts\\python.exe" gen_product_photos.py <input_photo> <product_context> <output_dir>
+  "C:\\Users\\mayan\\OneDrive\\Desktop\\Madese Photo Studio\\.venv\\Scripts\\python.exe" gen_product_photos.py <input_photo> <product_context> <output_dir> [ad_concept]
 
 Generates:
 - every instruction in the "Clean Listing Photos" tab of prompts.json
@@ -36,6 +36,12 @@ import prompts_store  # noqa: E402
 from gemini_client import GeminiImageError, generate_variant  # noqa: E402
 
 
+AD_CONCEPT_NOTE = (
+    "\n\nCREATIVE CONCEPT FOR THIS PRODUCT (already decided by the art director - do NOT invent a different idea; "
+    "draw exactly this, keeping the product accurate and the composition simple):\n{concept}"
+)
+
+
 def slugify(title: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", title.strip().lower()).strip("-")
     return s or "untitled"
@@ -52,6 +58,7 @@ def load_reference_images(rel_paths):
 
 def main():
     input_path, context, out_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+    ad_concept = sys.argv[4].strip() if len(sys.argv) > 4 else ""
     os.makedirs(out_dir, exist_ok=True)
     photo = Image.open(input_path)
 
@@ -86,7 +93,7 @@ def main():
         try:
             result = generate_variant(
                 photo,
-                inst["text"],
+                inst["text"] + (AD_CONCEPT_NOTE.format(concept=ad_concept) if (inst is conceptual_ad and ad_concept) else ""),
                 reference_images=load_reference_images(inst.get("reference_images", [])),
                 product_context=context,
                 model=AD_MODEL if inst is conceptual_ad else None,
