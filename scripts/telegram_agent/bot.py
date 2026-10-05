@@ -1,0 +1,250 @@
+"""Telegram front door for the House of Madese add-product agent.
+
+Mayank sends a product link + photo (+ optional "499 lamps" style caption) to a
+private Telegram bot. This process, running on his PC, downloads the photo and
+runs Claude Code headlessly with the repo's add-product skill, which generates
+the 5 Gemini photos, writes the description, publishes to the live site, and
+replies with the result here.
+
+Standard library only - no pip install. Config comes from .env next to this file:
+  TELEGRAM_BOT_TOKEN=...      (from @BotFather)
+  ALLOWED_USER_ID=...         (your numeric Telegram id - the bot ignores everyone else)
+  DRY_RUN=1                   (optional: do everything except publish, for testing)
+"""
+import json
+import os
+import queue
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import urllib.parse
+import urllib.request
+from datetime import datetime
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(HERE))
+WORK_ROOT = os.path.join(os.environ.get("TEMP", HERE), "madese-agent")
+JOB_TIMEOUT_S = 40 * 60
+SETTLE_S = 4          # wait this long after the last message before acting (multi-photo albums, link sent after photo)
+PENDING_TTL_S = 15 * 60
+
+URL_RE = re.compile(r"https?://\S+")
+
+
+def load_env():
+    env = {}
+    p = os.path.join(HERE, ".env")
+    if os.path.exists(p):
+        for line in open(p, encoding="utf8"):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                env[k.strip()] = v.strip().strip('"').strip("'")
+    return env
+
+
+ENV = load_env()
+TOKEN = ENV.get("TELEGRAM_BOT_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN")
+ALLOWED = ENV.get("ALLOWED_USER_ID") or os.environ.get("ALLOWED_USER_ID")
+DRY_RUN = (ENV.get("DRY_RUN") or "").strip() in ("1", "true", "yes")
+API = f"https://api.telegram.org/bot{TOKEN}"
+FILE_API = f"https://api.telegram.org/file/bot{TOKEN}"
+CLAUDE = shutil.which("claude") or shutil.which("claude.exe")
+
+LOG = open(os.path.join(HERE, "agent.log"), "a", encoding="utf8", buffering=1)
+
+
+def log(*a):
+    line = f"{datetime.now():%Y-%m-%d %H:%M:%S} " + " ".join(str(x) for x in a)
+    print(line)
+    LOG.write(line + "\n")
+
+
+def tg(method, **params):
+    data = urllib.parse.urlencode({k: v for k, v in params.items() if v is not None}).encode()
+    req = urllib.request.Request(f"{API}/{method}", data=data)
+    with urllib.request.urlopen(req, timeout=70) as r:
+        return json.load(r)
+
+
+def say(chat_id, text):
+    for i in range(0, len(text), 3900):
+        try:
+            tg("sendMessage", chat_id=chat_id, text=text[i:i + 3900], disable_web_page_preview="true")
+        except Exception as e:
+            log("sendMessage failed:", e)
+
+
+def download(file_id, dest_dir):
+    info = tg("getFile", file_id=file_id)["result"]
+    ext = os.path.splitext(info["file_path"])[1] or ".jpg"
+    path = os.path.join(dest_dir, f"photo{len(os.listdir(dest_dir)) + 1}{ext}")
+    with urllib.request.urlopen(f"{FILE_API}/{info['file_path']}", timeout=120) as r, open(path, "wb") as f:
+        shutil.copyfileobj(r, f)
+    return path
+
+
+# ---- job running -----------------------------------------------------------
+
+def build_prompt(photos, text):
+    lines = [
+        "You are running headlessly as Mayank's House of Madese product-listing agent, triggered from Telegram.",
+        f"Read {os.path.join(REPO, '.claude', 'skills', 'add-product', 'SKILL.md')} and follow it exactly, start to finish, without asking questions.",
+        "",
+        "Reference photo path(s) (use the first as the primary; the rest are extra angles):",
+        *[f"  {p}" for p in photos],
+        "",
+        "Mayank's message (contains the source link and optionally a price/collection/name hint):",
+        text or "(no text)",
+    ]
+    if DRY_RUN:
+        lines += ["", "TEST MODE: in step 5 run add_product.py with --dry-run instead of --publish, and begin your final report with '🧪 TEST - not published'."]
+    lines += ["", "Your final output is sent to him verbatim on Telegram, so end with the short report described in step 6."]
+    return "\n".join(lines)
+
+
+def run_job(chat_id, photos, text):
+    if not CLAUDE:
+        say(chat_id, "❌ Can't find the `claude` command on this PC's PATH.")
+        return
+    say(chat_id, "⏳ On it. Reading the link, generating 5 photos, writing the description. Usually 3-8 minutes.")
+    cmd = [
+        CLAUDE, "-p", build_prompt(photos, text),
+        "--permission-mode", "dontAsk",
+        "--allowedTools", "Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebFetch", "WebSearch", "mcp__claude-in-chrome__*",
+        "--add-dir", os.path.join(os.environ.get("USERPROFILE", ""), "OneDrive", "Desktop", "Madese Photo Studio"),
+        "--add-dir", WORK_ROOT,
+    ]
+    log("job start:", text[:120].replace("\n", " "), "| photos:", len(photos))
+    stop = threading.Event()
+
+    def typing():
+        while not stop.wait(4.5):
+            try:
+                tg("sendChatAction", chat_id=chat_id, action="upload_photo")
+            except Exception:
+                pass
+    threading.Thread(target=typing, daemon=True).start()
+    try:
+        r = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, encoding="utf8", timeout=JOB_TIMEOUT_S)
+        out = (r.stdout or "").strip()
+        log("job exit", r.returncode, "| stderr:", (r.stderr or "")[-300:].replace("\n", " "))
+        if r.returncode == 0 and out:
+            say(chat_id, out)
+        else:
+            say(chat_id, "❌ NOT published: the agent run failed.\n" + ((out or r.stderr or "no output")[-800:]))
+    except subprocess.TimeoutExpired:
+        say(chat_id, "❌ NOT published: timed out after 40 minutes. Check the site before resending, in case it half-finished.")
+    except Exception as e:
+        say(chat_id, f"❌ NOT published: {e}")
+    finally:
+        stop.set()
+
+
+jobs = queue.Queue()
+
+
+def worker():
+    while True:
+        chat_id, photos, text = jobs.get()
+        try:
+            run_job(chat_id, photos, text)
+        except Exception as e:  # never let the worker die
+            log("worker error:", e)
+            say(chat_id, f"❌ Agent error: {e}")
+        jobs.task_done()
+
+
+# ---- message collection ----------------------------------------------------
+
+pending = {}  # chat_id -> {"photos": [...], "text": [...], "last": ts, "nudged": bool, "dir": str}
+
+
+def on_message(msg):
+    chat_id = msg["chat"]["id"]
+    uid = str(msg.get("from", {}).get("id", ""))
+    if not ALLOWED:
+        say(chat_id, f"Your Telegram ID is {uid}. Put ALLOWED_USER_ID={uid} in scripts/telegram_agent/.env and restart me.")
+        return
+    if uid != str(ALLOWED):
+        log("ignored message from", uid)
+        return
+
+    text = (msg.get("text") or msg.get("caption") or "").strip()
+    if text.lower() in ("/start", "/help"):
+        say(chat_id, "Send me a product link + a photo of it (link in the caption or as a separate message). "
+                     "Optionally add a price and collection, e.g. '499 lamps'. I'll generate the photos, write the listing and publish it.")
+        return
+    if text.lower() in ("/cancel", "cancel"):
+        p = pending.pop(chat_id, None)
+        say(chat_id, "Cleared." if p else "Nothing pending.")
+        return
+
+    p = pending.setdefault(chat_id, {"photos": [], "text": [], "last": 0, "nudged": False,
+                                     "dir": os.path.join(WORK_ROOT, "incoming", datetime.now().strftime("%Y%m%d-%H%M%S"))})
+    os.makedirs(p["dir"], exist_ok=True)
+    try:
+        if msg.get("photo"):
+            p["photos"].append(download(msg["photo"][-1]["file_id"], p["dir"]))
+        elif (msg.get("document") or {}).get("mime_type", "").startswith("image/"):
+            p["photos"].append(download(msg["document"]["file_id"], p["dir"]))
+    except Exception as e:
+        say(chat_id, f"❌ Couldn't download that photo: {e}")
+        return
+    if text:
+        p["text"].append(text)
+    p["last"] = time.time()
+    p["nudged"] = False
+
+
+def flush_pending():
+    now = time.time()
+    for chat_id, p in list(pending.items()):
+        idle = now - p["last"]
+        text = "\n".join(p["text"])
+        has_link = bool(URL_RE.search(text))
+        if p["photos"] and has_link and idle >= SETTLE_S:
+            del pending[chat_id]
+            jobs.put((chat_id, p["photos"], text))
+            if jobs.unfinished_tasks > 1:
+                say(chat_id, "Queued: another product is still being processed.")
+        elif idle >= SETTLE_S and not p["nudged"] and (p["photos"] or p["text"]):
+            p["nudged"] = True
+            if p["photos"] and not has_link:
+                say(chat_id, "Got the photo. Now send the product link (or /cancel).")
+            elif has_link and not p["photos"]:
+                say(chat_id, "Got the link. Now send a photo of the product (or /cancel).")
+            else:
+                say(chat_id, "I need a product link and a photo.")
+        elif idle > PENDING_TTL_S:
+            del pending[chat_id]
+
+
+def main():
+    if not TOKEN:
+        sys.exit("Missing TELEGRAM_BOT_TOKEN in scripts/telegram_agent/.env (see README.md)")
+    os.makedirs(WORK_ROOT, exist_ok=True)
+    threading.Thread(target=worker, daemon=True).start()
+    me = tg("getMe")["result"]
+    log(f"bot @{me['username']} online | allowed user: {ALLOWED or '(not set)'} | dry-run: {DRY_RUN} | claude: {CLAUDE}")
+    offset = None
+    while True:
+        try:
+            res = tg("getUpdates", offset=offset, timeout=3)["result"]
+            for u in res:
+                offset = u["update_id"] + 1
+                if "message" in u:
+                    on_message(u["message"])
+            flush_pending()
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            log("poll error:", e)
+            time.sleep(5)
+
+
+if __name__ == "__main__":
+    main()
