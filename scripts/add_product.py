@@ -145,18 +145,27 @@ def main():
     while pid in existing_ids:
         pid, n = f"{base}-{n}", n + 1
 
-    # Images.
+    # Images. The conceptual ad is the FIRST image customers see (card, hero, product page);
+    # the plain white-background shot leads the gallery. If the ad failed to generate, the
+    # white shot (or the original photo) is the main image as before.
     d = spec["images_dir"]
-    pngs = sorted(f for f in os.listdir(d) if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp")))
-    main_file = next((f for f in pngs if f.lower().startswith("main.")), None)
-    if main_file:
+    files = sorted(f for f in os.listdir(d) if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp")))
+    main_file = next((f for f in files if f.lower().startswith("main.")), None)
+    ad_file = next((f for f in files if f.lower().startswith("conceptual-print-ad")), None)
+    rest = sorted((f for f in files if f not in (main_file, ad_file)), key=lambda f: gallery_sort_key(f.lower()))
+    if ad_file:
+        img = encode_image(os.path.join(d, ad_file), GALLERY_MAX_PX)
+        gallery_files = ([main_file] if main_file else []) + rest
+    elif main_file:
         img = encode_image(os.path.join(d, main_file), MAIN_MAX_PX)
+        gallery_files = rest
     elif spec.get("fallback_photo") and os.path.exists(spec["fallback_photo"]):
         img = encode_image(spec["fallback_photo"], MAIN_MAX_PX)
+        gallery_files = rest
     else:
-        fail("no main image and no fallback_photo")
-    gallery_files = sorted((f for f in pngs if f != main_file), key=lambda f: gallery_sort_key(f.lower()))
+        fail("no ad, no main image, and no fallback_photo")
     gallery = [encode_image(os.path.join(d, f), GALLERY_MAX_PX) for f in gallery_files]
+    first_image = ad_file or main_file or "fallback_photo"
 
     price = spec["price"]
     sub = (spec.get("subcollection") or "").strip()
@@ -207,7 +216,7 @@ def main():
 
     result = {
         "id": pid, "name": product["name"], "collection": coll["name"], "price": price,
-        "mrp": product["mrp"], "gallery_count": len(gallery), "main": main_file or "fallback_photo",
+        "mrp": product["mrp"], "gallery_count": len(gallery), "first_image": first_image,
         "gallery_files": gallery_files, "published": False,
     }
     if dry:

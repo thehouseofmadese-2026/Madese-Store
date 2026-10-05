@@ -195,11 +195,25 @@ def on_message(msg):
     if text.lower() in ("/start", "/help"):
         say(chat_id, "Send me a product link + a photo of it (link in the caption or as a separate message). "
                      "Optionally add a price and collection, e.g. '499 lamps'. You can send several products in a row; "
-                     "I'll queue them and do them one by one.")
+                     "I'll queue them and do them one by one. Send /undo to remove the last product I published.")
         return
     if text.lower() in ("/cancel", "cancel"):
         had = units.pop(("partial", chat_id), None)
         say(chat_id, "Cleared the half-sent request." if had else "Nothing half-sent. (Jobs already queued can't be cancelled.)")
+        return
+
+    if text.lower() in ("/undo", "undo"):
+        if jobs.unfinished_tasks > 0:
+            say(chat_id, "A product is still being processed. Wait for it to finish, then send /undo.")
+            return
+        say(chat_id, "Undoing the last product I published...")
+        r = subprocess.run([sys.executable, os.path.join(REPO, "scripts", "undo_product.py")],
+                           capture_output=True, text=True, encoding="utf8", timeout=300)
+        out = (r.stdout or "").strip().splitlines()
+        last = out[-1] if out else (r.stderr or "no output").strip()[-300:]
+        log("undo:", last)
+        say(chat_id, ("↩️ Removed: " + last[len("UNDONE "):] + ". Gone from the site in about a minute. Send /undo again to remove the one before it.")
+            if last.startswith("UNDONE") else "❌ " + last)
         return
 
     has_photo = bool(msg.get("photo")) or (msg.get("document") or {}).get("mime_type", "").startswith("image/")

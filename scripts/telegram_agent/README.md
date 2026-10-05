@@ -17,7 +17,7 @@ inference, description) → `scripts/gen_product_photos.py` (Gemini via Madese P
 ## Using it
 Photo + link in one message (link in caption) or as two messages. Optional hints in the same text:
 `https://makerworld.com/... 499 lamps` (price + collection) or `call it Bean Pod`.
-Send photos as "File" instead of "Photo" for full quality. /cancel clears a half-sent request.
+Send photos as "File" instead of "Photo" for full quality. /cancel clears a half-sent request. /undo removes the last product the agent published (repeat to go further back).
 
 ## Notes
 - Your PC must be on and `start_agent.bat` running (put a shortcut in `shell:startup` to auto-start at login).

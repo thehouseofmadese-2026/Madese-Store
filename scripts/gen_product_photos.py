@@ -80,7 +80,7 @@ def main():
         None,
     )
 
-    AD_MODEL = "gemini-3-pro-image"  # best-quality model, used ONLY for the conceptual ad
+    AD_MODEL = "gemini-3.1-flash-image"  # mid-tier (Balanced) model, used ONLY for the conceptual ad
     jobs = [(inst, i == main_idx) for i, inst in enumerate(clean_listing)]
     if conceptual_ad is not None:
         jobs.append((conceptual_ad, False))
