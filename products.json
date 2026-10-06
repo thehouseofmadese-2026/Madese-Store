@@ -48,5 +48,10 @@
     "id": "rinse-rebel-fruit-veg-washer",
     "name": "Rinse Rebel Fruit & Veg Washer",
     "price": 199
+  },
+  {
+    "id": "snap-sentinel-bag-clip",
+    "name": "Snap Sentinel Bag Clip",
+    "price": 99
   }
 ]
