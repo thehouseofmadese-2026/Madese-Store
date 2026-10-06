@@ -1,6 +1,6 @@
 # Telegram → House of Madese product agent
 
-Send the bot a product link + photo → it generates 5 Gemini photos (4 Clean Listing + 1 Conceptual Print Ad),
+Send the bot a product link + photo → it generates square Gemini photos (3 Clean Listing + 1 witty Conceptual Print Ad + one photo per colour option, which become the product page Color picker),
 writes a witty listing, publishes to houseofmadese.com, and replies with the result.
 
 Pieces: `bot.py` (Telegram listener) → `claude -p` + `.claude/skills/add-product/SKILL.md` (research, collection/price

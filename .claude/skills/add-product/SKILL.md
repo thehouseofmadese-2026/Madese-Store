@@ -1,6 +1,6 @@
 ---
 name: add-product
-description: Add a new product to the House of Madese catalogue from a source link (MakerWorld/Printables/etc.) and a reference photo. Generates 5 Gemini photos, writes a witty satirical description, and publishes live. Use when Mayank sends a product link + photo (price/collection optional), whether typed here or relayed by the Telegram agent.
+description: Add a new product to the House of Madese catalogue from a source link (MakerWorld/Printables/etc.) and a reference photo. Generates Gemini photos (incl. one per colour option), writes a witty satirical description, and publishes live. Use when Mayank sends a product link + photo (price/collection optional), whether typed here or relayed by the Telegram agent.
 ---
 
 # Add a new product to House of Madese
@@ -31,13 +31,22 @@ python -c "import re,json;d=json.loads(re.search(r'id=\"SITE_DATA\">(.*?)</scrip
 ## Step 3 — Generate the photos (Gemini via Madese Photo Studio)
 Output dir: `C:\Users\mayan\AppData\Local\Temp\madese-agent\<slug>-<timestamp>` (create it).
 ```
-"C:\Users\mayan\OneDrive\Desktop\Madese Photo Studio\.venv\Scripts\python.exe" "C:\Users\mayan\OneDrive\Desktop\House of Madese\scripts\gen_product_photos.py" "<photo path>" "<1-2 sentence product_context from step 1>" "<output dir>" "<ad concept>"
+"C:\Users\mayan\OneDrive\Desktop\Madese Photo Studio\.venv\Scripts\python.exe" "C:\Users\mayan\OneDrive\Desktop\House of Madese\scripts\gen_product_photos.py" "<photo path>" "<1-2 sentence product_context from step 1>" "<output dir>" "<ad concept>" "<colors>"
 ```
-`<ad concept>` is the 4th argument: the conceptual-ad idea YOU invent for this specific product (see below). Always pass it.
+`<ad concept>` (4th argument) is the conceptual-ad idea YOU invent for this specific product (see below). `<colors>` (5th) is the colour options YOU pick (see below). Always pass both.
 
-Generates every "Clean Listing Photos" instruction (4 currently; "Pure White Isolated" → `main.png`) plus the "Conceptual Print Ad" → 5 images. Prints `OK <slug>` / `FAIL <slug>: <reason>`. Run it with a generous timeout (up to 10 min). If an image FAILs, retry that whole script once only if **3 or more** failed; otherwise carry on with what you have. If `main.png` is missing the publish script falls back to his original photo.
+Generates (all as 1:1 squares, because the site shows every product image in a square frame, cover-cropped): every "Clean Listing Photos" instruction except the old 2x2 colour grid (currently "Pure White Isolated" → `main.png`, usecase infographic, size comparison), the "Conceptual Print Ad", and one single-colour photo per colour → `color-<slug>.png`. Prints `OK <slug>` / `FAIL <slug>: <reason>`. Run it with a generous timeout (up to 15 min). If **3 or more** images FAIL, retry the whole script once; otherwise carry on with what you have. If `main.png` is missing the publish script falls back to his original photo.
 
-**Ad concept (do this before running the script).** The image model is poor at inventing ideas but good at drawing one it is handed, so you decide the idea. Write 2-4 sentences covering: (1) ONE simple visual metaphor rooted in what this product physically does or its shape, easily understood in a glance; (2) exactly how the product appears in the scene (it must stay clearly visible, accurate, and the hero); (3) a headline of 2-6 words that is clever but plainly readable, no puns that need explaining; (4) a background colour that complements the product. Keep it drawable: one product, at most 1-2 supporting elements, no crowds, no tiny text beyond the headline. Sanity-check: could a stranger explain the ad in one sentence? If not, simplify. Example for a pen stand: "The pen stand is the skyline of a tiny city: the pens are towers rising from it against a warm cream background. Headline: 'Your Desk, Skyline.'"
+**Colour options (do this before running the script).** Customers pick a colour on the product page and add that colour to the cart, so choose colours that genuinely suit the product. Pick **4** (3 if the product has an obviously fixed look, e.g. a photo lithophane lamp; never fewer than 2) from ONLY these filaments: Pitch Black, Pure White, Midnight Gray, Nuclear Red, Outrageous Orange, Lemon Yellow, Rust Copper, Chocolate Brown, Ice Blue, Sakura Pink, Arctic (Translucent), Orange (Translucent), Transparent (High-Speed). Give them as one comma-separated string. Use "A + B" for a two-colour combo (body A, accents B) only when the product has separate parts that can take a second colour, e.g. `"Pitch Black, Nuclear Red + Pitch Black, Ice Blue, Sakura Pink"`. Mix safe bestsellers (black, white) with distinctive ones. Exact names only; an unknown name fails the colour step.
+
+**Ad concept (do this before running the script).** The image model is poor at inventing ideas but good at drawing one it is handed, so you decide the idea. Write 2-4 sentences covering: (1) ONE simple visual metaphor rooted in what this product physically does or its shape, easily understood in a glance; (2) exactly how the product appears in the scene (it must stay clearly visible, accurate, and the hero); (3) the **witty copy** (below); (4) a background colour that complements the product. Keep it drawable: one product, at most 1-2 supporting elements, no crowds. Sanity-check: could a stranger explain the ad in one sentence? If not, simplify.
+
+**Witty copy.** The ad must read as witty, not just pretty: the words are half the joke. Write, labelled exactly like this inside the concept text:
+- `Headline:` 2-6 words, a pun, a dry sarcastic jab or a smart one-liner that plays off the visual (the picture and the words should land together). The pun must work on the first read, with no explaining needed.
+- `Subline:` (optional but encouraged) one tiny deadpan or sarcastic aside, max ~8 words, that twists the headline, e.g. a fake disclaimer or a mock-modest brag.
+- `Scene text:` (optional, at most one) a witty note written on something in the scene (sticky note, tag, label), max ~5 words.
+Rules: nothing crude, political or mocking customers/other brands; keep every word easy to spell, since the image model must render the letters exactly; total text beyond the "HOUSE OF MADESE" signature stays under ~15 words. Don't make claims that aren't true of the product.
+Example for a pen stand: "The pen stand is the skyline of a tiny city: the pens are towers rising from it against a warm cream background. Headline: 'Your Desk, Skyline.' Subline: 'Zoning approved by nobody.'" Example for a bag clip: "The clip bites a bag shut like a tiny crocodile on a deep teal background. Headline: 'Snap Judgement.' Subline: 'Stale chips filed a complaint.'"
 
 Make `product_context` factual and specific (what it is, how it's used, rough size) so Gemini doesn't mis-identify the object. The infographic prompt says to replace example callouts with the product's real features, so put 3–4 real features in the context too.
 
@@ -46,11 +55,14 @@ Create `<output dir>/spec.json`:
 ```json
 {
   "name": "...", "collection": "...", "subcollection": "", "price": 0, "mrp": 0,
+  "colors": ["Pitch Black", "Nuclear Red + Pitch Black"],
   "specs": ["2-5 short FACTUAL bullets: material, size, use"],
   "desc": "...", "stl": "<the source link>",
   "images_dir": "<output dir>", "fallback_photo": "<his original photo path>"
 }
 ```
+`colors` = the same colour names you passed to the photo script, in the same order, spelled identically (the publish script matches each to its `color-<slug>.png`; colours whose photo failed are dropped, and the Color picker only appears with 2+ left). It makes a Color picker on the product page so customers can buy the colour they want; every colour costs the same.
+
 **Name**: his override, else a short, brandable name (existing style: "Desk Rebel Pen Stand", "Cumulis Table Lamp", "Grip Halo MagSafe Stand" — a catchy first word + plain product noun). Don't copy a third-party's trademarked name.
 
 **Description voice (witty, a little satirical, funny) — rules:**
@@ -70,8 +82,9 @@ Exactly this shape, no markdown tables:
 ```
 ✅ Live: <name>
 Collection: <collection> · ₹<price> (MRP ₹<mrp>) [say "price inferred" if you chose it]
-Photos: <n>/5 generated (<list any that failed by name>)
-Ad idea: <the concept in one short sentence + headline>
+Photos: <n> generated (<list any that failed by name>)
+Colors: <the colour options now live in the picker, or "none">
+Ad idea: <the concept in one short sentence + headline + subline>
 Link read: yes/no
 Live in ~1 min: https://www.houseofmadese.com/ (Admin → Products to tweak anything)
 ```

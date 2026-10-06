@@ -20,6 +20,7 @@ spec.json:
   "specs": ["PLA", "160mm x 200mm"],
   "desc": "Funny but honest description...",
   "stl": "https://makerworld.com/...",   # source link, admin-only field
+  "colors": ["Pitch Black", "Nuclear Red + Pitch Black"],  # optional; names must match color-<slug>.png files in images_dir
   "images_dir": "C:/.../out",       # folder with main.png + other generated *.png
   "fallback_photo": "C:/.../ref.jpg" # used for img if main.png is missing
 }
@@ -44,6 +45,7 @@ INDEX = os.path.join(REPO, "index.html")
 PRODUCTS_JSON = os.path.join(REPO, "products.json")
 
 MAIN_MAX_PX, GALLERY_MAX_PX, JPEG_QUALITY = 1000, 1400, 82
+COLOR_MAX_PX = 900  # colour-picker photos: shown in the square product frame + tiny swatches, keep the page light
 GALLERY_ORDER = ["conceptual-print-ad", "usecase", "size-comparison", "color-combo"]
 
 SITE_RE = re.compile(r'(<script type="application/json" id="SITE_DATA">)(.*?)(</script>)', re.S)
@@ -152,7 +154,10 @@ def main():
     files = sorted(f for f in os.listdir(d) if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp")))
     main_file = next((f for f in files if f.lower().startswith("main.")), None)
     ad_file = next((f for f in files if f.lower().startswith("conceptual-print-ad")), None)
-    rest = sorted((f for f in files if f not in (main_file, ad_file)), key=lambda f: gallery_sort_key(f.lower()))
+    # color-<slug>.png files feed the product's Color picker, not the gallery.
+    color_files = [f for f in files if f.lower().startswith("color-")]
+    rest = sorted((f for f in files if f not in (main_file, ad_file) and f not in color_files),
+                  key=lambda f: gallery_sort_key(f.lower()))
     if ad_file:
         img = encode_image(os.path.join(d, ad_file), GALLERY_MAX_PX)
         gallery_files = ([main_file] if main_file else []) + rest
@@ -166,6 +171,15 @@ def main():
         fail("no ad, no main image, and no fallback_photo")
     gallery = [encode_image(os.path.join(d, f), GALLERY_MAX_PX) for f in gallery_files]
     first_image = ad_file or main_file or "fallback_photo"
+
+    # Color picker: spec["colors"] is the ordered list of colour names; each needs a color-<slug>.png. A picker with
+    # fewer than 2 working colours is pointless, so it is only switched on with 2+. Same price for every colour.
+    colors = []
+    for cname in spec.get("colors") or []:
+        cf = f"color-{slugify(cname)}.png"
+        match = next((f for f in color_files if f.lower() == cf), None)
+        if match:
+            colors.append({"name": cname.strip(), "img": encode_image(os.path.join(d, match), COLOR_MAX_PX)})
 
     price = spec["price"]
     sub = (spec.get("subcollection") or "").strip()
@@ -183,8 +197,8 @@ def main():
         "gallery": gallery,
         "variants": [],
         "showVariants": False,
-        "colors": [],
-        "showColors": False,
+        "colors": colors if len(colors) >= 2 else [],
+        "showColors": len(colors) >= 2,
         "stl": spec.get("stl", ""),
     }
 
@@ -217,6 +231,7 @@ def main():
     result = {
         "id": pid, "name": product["name"], "collection": coll["name"], "price": price,
         "mrp": product["mrp"], "gallery_count": len(gallery), "first_image": first_image,
+        "colors": [c["name"] for c in product["colors"]],
         "gallery_files": gallery_files, "published": False,
     }
     if dry:

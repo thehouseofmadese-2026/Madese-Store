@@ -3,7 +3,7 @@
 Mayank sends a product link + photo (+ optional "499 lamps" style caption) to a
 private Telegram bot. This process, running on his PC, downloads the photo and
 runs Claude Code headlessly with the repo's add-product skill, which generates
-the 5 Gemini photos, writes the description, publishes to the live site, and
+the Gemini photos (incl. colour options), writes the description, publishes to the live site, and
 replies with the result here.
 
 Standard library only - no pip install. Config comes from .env next to this file:
@@ -110,7 +110,7 @@ def run_job(chat_id, photos, text):
     if not CLAUDE:
         say(chat_id, "❌ Can't find the `claude` command on this PC's PATH.")
         return
-    say(chat_id, "⏳ On it. Reading the link, generating 5 photos, writing the description. Usually 3-8 minutes.")
+    say(chat_id, "⏳ On it. Reading the link, generating the photos and colour options, writing the description. Usually 5-12 minutes.")
     cmd = [
         CLAUDE, "-p", build_prompt(photos, text),
         "--permission-mode", "dontAsk",
