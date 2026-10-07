@@ -106,25 +106,41 @@ def build_prompt(photos, text):
     return "\n".join(lines)
 
 
+def build_change_prompt(text):
+    lines = [
+        "You are running headlessly as Mayank's House of Madese site-update agent, triggered from Telegram.",
+        f"Read {os.path.join(REPO, '.claude', 'skills', 'update-site', 'SKILL.md')} and follow it exactly, start to finish, without asking questions.",
+        "",
+        "Mayank's change request:",
+        text,
+    ]
+    if DRY_RUN:
+        lines += ["", "TEST MODE: make and validate the edit but do NOT run publish_site.py and do NOT commit; revert your edit with `git checkout -- index.html products.json` afterwards, and begin your final report with '🧪 TEST - not published'."]
+    lines += ["", "Your final output is sent to him verbatim on Telegram, so end with the short report described in the skill."]
+    return "\n".join(lines)
+
+
 def run_job(chat_id, photos, text):
+    change = photos is None   # change request (text only) vs. add-product job
     if not CLAUDE:
         say(chat_id, "❌ Can't find the `claude` command on this PC's PATH.")
         return
-    say(chat_id, "⏳ On it. Reading the link, generating the photos and colour options, writing the description. Usually 5-12 minutes.")
+    say(chat_id, "⏳ On it. Making the change and validating it. Usually 1-3 minutes." if change else
+        "⏳ On it. Reading the link, generating the photos and colour options, writing the description. Usually 5-12 minutes.")
     cmd = [
-        CLAUDE, "-p", build_prompt(photos, text),
+        CLAUDE, "-p", build_change_prompt(text) if change else build_prompt(photos, text),
         "--permission-mode", "dontAsk",
         "--allowedTools", "Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebFetch", "WebSearch", "mcp__claude-in-chrome__*",
         "--add-dir", os.path.join(os.environ.get("USERPROFILE", ""), "OneDrive", "Desktop", "Madese Photo Studio"),
         "--add-dir", WORK_ROOT,
     ]
-    log("job start:", text[:120].replace("\n", " "), "| photos:", len(photos))
+    log("job start:", "CHANGE" if change else "PRODUCT", text[:120].replace("\n", " "), "| photos:", len(photos or []))
     stop = threading.Event()
 
     def typing():
         while not stop.wait(4.5):
             try:
-                tg("sendChatAction", chat_id=chat_id, action="upload_photo")
+                tg("sendChatAction", chat_id=chat_id, action="typing" if change else "upload_photo")
             except Exception:
                 pass
     threading.Thread(target=typing, daemon=True).start()
@@ -173,6 +189,31 @@ def new_unit(chat_id, album=False):
             "dir": os.path.join(WORK_ROOT, "incoming", datetime.now().strftime("%Y%m%d-%H%M%S-%f"))}
 
 
+def enqueue_change(chat_id, text):
+    jobs.put((chat_id, None, text))
+    n = jobs.unfinished_tasks
+    if n > 1:
+        say(chat_id, f"Queued (#{n}): I'll start it as soon as the one before it finishes.")
+
+
+def run_script(chat_id, script, args, ok_prefix, ok_msg, busy_msg):
+    """Run one of the repo's publish/revert scripts and report its single result line."""
+    if jobs.unfinished_tasks > 0:
+        say(chat_id, busy_msg)
+        return
+    r = subprocess.run([sys.executable, os.path.join(REPO, "scripts", script), *args],
+                       capture_output=True, text=True, encoding="utf8", timeout=300)
+    out = (r.stdout or "").strip().splitlines()
+    last = out[-1] if out else (r.stderr or "no output").strip()[-300:]
+    log(script + ":", last)
+    if last.startswith(ok_prefix):
+        say(chat_id, ok_msg.format(last[len(ok_prefix):].strip()))
+    elif last == "NOTHING":
+        say(chat_id, "Nothing to publish: index.html and products.json already match what's live.")
+    else:
+        say(chat_id, "❌ NOT published: " + last[len("ERROR "):] if last.startswith("ERROR") else "❌ " + last)
+
+
 def enqueue(unit):
     chat_id = unit["chat"]
     jobs.put((chat_id, unit["photos"], "\n".join(unit["text"])))
@@ -197,7 +238,34 @@ def on_message(msg):
                      "Optionally add a price and collection, e.g. '499 lamps', and a note in your own words about what the product is and does "
                      "(e.g. '99 homemaker. Screw-down clip that seals coffee bags'), which I treat as the truth over the link. "
                      "You can send several products in a row; "
-                     "I'll queue them and do them one by one. Send /undo to remove the last product I published.")
+                     "I'll queue them and do them one by one. Send /undo to remove the last product I published.\n\n"
+                     "Site changes: just tell me in plain words (e.g. 'change the hero headline to ...') and I'll edit the site and publish it. "
+                     "/publish pushes any edits already made on this PC. Send the admin-downloaded index.html as a file and I'll validate and publish it. "
+                     "/revert undoes the last site change.")
+        return
+    if text.lower().split()[:1] == ["/publish"]:
+        say(chat_id, "Publishing the pending site edits...")
+        run_script(chat_id, "publish_site.py", [text[len("/publish"):].strip() or "manual edits"], "PUBLISHED",
+                   "🚀 Published ({}). Live in about a minute. Send /revert to undo.", "A job is still running. Wait for it to finish, then send /publish.")
+        return
+    if text.lower() == "/revert":
+        say(chat_id, "Reverting the last site change...")
+        run_script(chat_id, "revert_site.py", [], "REVERTED", "↩️ Reverted: {}. Gone from the site in about a minute. Send /revert again to go one further back.",
+                   "A job is still running. Wait for it to finish, then send /revert.")
+        return
+    doc = msg.get("document") or {}
+    fname = (doc.get("file_name") or "").lower()
+    if fname.startswith("index") and fname.endswith(".html"):
+        try:
+            d = os.path.join(WORK_ROOT, "incoming", datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+            os.makedirs(d, exist_ok=True)
+            path = download(doc["file_id"], d)
+        except Exception as e:
+            say(chat_id, f"❌ Couldn't download that file: {e}")
+            return
+        say(chat_id, "Got the site file. Validating and publishing...")
+        run_script(chat_id, "publish_site.py", [text or "uploaded index.html", "--install", path], "PUBLISHED",
+                   "🚀 Published ({}). Live in about a minute. Send /revert to undo.", "A job is still running. Wait for it to finish, then resend the file.")
         return
     if text.lower() in ("/cancel", "cancel"):
         had = units.pop(("partial", chat_id), None)
@@ -221,6 +289,10 @@ def on_message(msg):
     has_photo = bool(msg.get("photo")) or (msg.get("document") or {}).get("mime_type", "").startswith("image/")
     has_link = bool(URL_RE.search(text))
     mg = msg.get("media_group_id")
+
+    if text and not has_photo and not has_link and not mg and ("partial", chat_id) not in units:
+        enqueue_change(chat_id, text)     # plain-language site change request
+        return
 
     if mg:                                    # part of an album: gather everything with the same id
         key = ("album", mg)
