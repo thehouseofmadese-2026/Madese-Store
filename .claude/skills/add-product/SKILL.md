@@ -8,17 +8,19 @@ description: Add a new product to the House of Madese catalogue from a source li
 Input (any order, in Mayank's words; often relayed by the Telegram bot as a block of text + a local photo path):
 - a **source link** (usually MakerWorld / Printables)
 - one or more **reference photo path(s)**
-- OPTIONAL in the caption: a **price** (rupees), a **collection** name, an MRP/discount, a name override, a note. Examples: `499 lamps`, `price 349, desk`, `call it Bean Pod`.
+- OPTIONAL in the caption: a **price** (rupees), a **collection** name, an MRP/discount, a name override, and a **product note** (free text in his own words explaining what the product is and what it does, e.g. `99 homemaker. It's a screw-down clip that seals coffee bags, the knob twists to tighten`). Examples: `499 lamps`, `price 349, desk`, `call it Bean Pod`.
+- **The product note is the source of truth.** Anything in his message that isn't the link, a price, a collection or a name is the note. If it exists, it beats what you read from the link and what you guess from the photo: use it for `product_context`, the specs bullets, the ad concept and the description, and never contradict it. Link/photo details may only ADD to it.
 
 He wants this **fully automatic**: never stop to ask for approval before publishing. If something is wrong he fixes it in the site's Admin → Products. Only stop and ask when it is truly impossible to proceed: no photo was given at all, or the photo file doesn't exist. Everything else (unreadable link, no price, no collection) has a defined fallback below.
 
 Work in `C:\Users\mayan\OneDrive\Desktop\House of Madese`. Don't touch the sibling Madese Photo Studio project except by running its venv Python as shown below. Don't edit `api/*`.
 
 ## Step 1 — Research the link
-Work out what the product is, what it's for, size/material if stated, anything that makes the description honest. MakerWorld/Printables are JS-rendered:
-1. Try `WebFetch` first.
-2. If empty/unusable, use the Chrome tools (load via `ToolSearch` if deferred): navigate, then `get_page_text`.
-3. If still unreadable, infer from the photo + caption and say so in the final report. Don't block.
+Work out what the product is, what it's for, size/material if stated, anything that makes the description honest. MakerWorld/Printables are JS-rendered, so a bare `WebFetch` often returns only a shell. Count the link as READ only if you got the model's real title AND its description text (what it does, dimensions, print notes); a page title alone, a login wall or a generic site blurb is NOT a read.
+1. Try `WebFetch` on the link (drop the `?from=...#...` tracking tail).
+2. If it isn't a real read, use the Chrome tools (load via `ToolSearch` if deferred, `mcp__claude-in-chrome__*`): open the link in a new tab, wait for it to render, then `get_page_text`; scroll/read again if the description is collapsed.
+3. If still not a real read, fall back to his note + the photo, and say clearly in the report that the link could NOT be read (see step 6) so he can add a note and resend. Don't block.
+When you read the link, pull out concrete facts (what it does, how it works, size, parts, print settings) and let them shape the specs and description. Do not pad the specs with generic filler like "durable plastic" or invent shapes you can't see.
 
 ## Step 2 — Collection + price (infer unless Mayank gave them)
 Read the live data (never trust a memorised list). This prints collections and each product's collection/price/mrp:
@@ -85,7 +87,8 @@ Collection: <collection> · ₹<price> (MRP ₹<mrp>) [say "price inferred" if y
 Photos: <n> generated (<list any that failed by name>)
 Colors: <the colour options now live in the picker, or "none">
 Ad idea: <the concept in one short sentence + headline + subline>
-Link read: yes/no
+Link read: yes / partial / NO - <one line on what you learned from it, or "couldn't read it, used your note + photo">. If it was not a full read and he gave no note, add: "Tip: resend with a short note on what it does for a more accurate listing."
+Used your note: yes/no
 Live in ~1 min: https://www.houseofmadese.com/ (Admin → Products to tweak anything)
 ```
 If the publish failed, start with `❌ NOT published:` and the reason in one line.

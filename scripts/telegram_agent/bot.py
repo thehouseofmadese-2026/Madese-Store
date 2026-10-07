@@ -97,7 +97,7 @@ def build_prompt(photos, text):
         "Reference photo path(s) (use the first as the primary; the rest are extra angles):",
         *[f"  {p}" for p in photos],
         "",
-        "Mayank's message (contains the source link and optionally a price/collection/name hint):",
+        "Mayank's message (contains the source link and optionally a price/collection/name hint and a note explaining what the product is/does; the note is the source of truth):",
         text or "(no text)",
     ]
     if DRY_RUN:
@@ -194,7 +194,9 @@ def on_message(msg):
     text = (msg.get("text") or msg.get("caption") or "").strip()
     if text.lower() in ("/start", "/help"):
         say(chat_id, "Send me a product link + a photo of it (link in the caption or as a separate message). "
-                     "Optionally add a price and collection, e.g. '499 lamps'. You can send several products in a row; "
+                     "Optionally add a price and collection, e.g. '499 lamps', and a note in your own words about what the product is and does "
+                     "(e.g. '99 homemaker. Screw-down clip that seals coffee bags'), which I treat as the truth over the link. "
+                     "You can send several products in a row; "
                      "I'll queue them and do them one by one. Send /undo to remove the last product I published.")
         return
     if text.lower() in ("/cancel", "cancel"):
