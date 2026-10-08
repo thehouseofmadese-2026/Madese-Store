@@ -89,6 +89,24 @@ def download(file_id, dest_dir):
 
 # ---- job running -----------------------------------------------------------
 
+def build_redo_prompt(photos, text):
+    lines = [
+        "You are running headlessly as Mayank's House of Madese product-listing agent, triggered from Telegram with /redo.",
+        f"Read {os.path.join(REPO, '.claude', 'skills', 'redo-photos', 'SKILL.md')} and follow it exactly, start to finish, without asking questions.",
+        "This replaces photos on an ALREADY-LIVE product in place. Never add a new product.",
+        "",
+        "New reference photo path(s) (optional; if none, use the product's current main photo):",
+        *([f"  {p}" for p in photos] or ["  (none)"]),
+        "",
+        "Mayank's message (the product name + what he wants changed):",
+        text or "(no text)",
+    ]
+    if DRY_RUN:
+        lines += ["", "TEST MODE: in step 4 run update_product_photos.py with --dry-run instead of --publish, and begin your final report with '🧪 TEST - not published'."]
+    lines += ["", "Your final output is sent to him verbatim on Telegram, so end with the short report described in step 5."]
+    return "\n".join(lines)
+
+
 def build_prompt(photos, text):
     lines = [
         "You are running headlessly as Mayank's House of Madese product-listing agent, triggered from Telegram.",
@@ -106,13 +124,16 @@ def build_prompt(photos, text):
     return "\n".join(lines)
 
 
-def run_job(chat_id, photos, text):
+def run_job(chat_id, photos, text, redo=False):
     if not CLAUDE:
         say(chat_id, "❌ Can't find the `claude` command on this PC's PATH.")
         return
-    say(chat_id, "⏳ On it. Reading the link, generating the photos and colour options, writing the description. Usually 5-12 minutes.")
+    if redo:
+        say(chat_id, "⏳ On it. Regenerating the photos and swapping them into the live listing (no duplicate). Usually 3-10 minutes.")
+    else:
+        say(chat_id, "⏳ On it. Reading the link, generating the photos and colour options, writing the description. Usually 5-12 minutes.")
     cmd = [
-        CLAUDE, "-p", build_prompt(photos, text),
+        CLAUDE, "-p", (build_redo_prompt if redo else build_prompt)(photos, text),
         "--permission-mode", "dontAsk",
         "--allowedTools", "Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebFetch", "WebSearch", "mcp__claude-in-chrome__*",
         "--add-dir", os.path.join(os.environ.get("USERPROFILE", ""), "OneDrive", "Desktop", "Madese Photo Studio"),
@@ -135,7 +156,7 @@ def run_job(chat_id, photos, text):
         if r.returncode == 0 and out:
             say(chat_id, out)
         else:
-            say(chat_id, "❌ NOT published: the agent run failed.\n" + ((out or r.stderr or "no output")[-800:]))
+            say(chat_id, ("❌ NOT updated" if redo else "❌ NOT published") + ": the agent run failed.\n" + ((out or r.stderr or "no output")[-800:]))
     except subprocess.TimeoutExpired:
         say(chat_id, "❌ NOT published: timed out after 40 minutes. Check the site before resending, in case it half-finished.")
     except Exception as e:
@@ -149,9 +170,9 @@ jobs = queue.Queue()
 
 def worker():
     while True:
-        chat_id, photos, text = jobs.get()
+        chat_id, photos, text, redo = jobs.get()
         try:
-            run_job(chat_id, photos, text)
+            run_job(chat_id, photos, text, redo)
         except Exception as e:  # never let the worker die
             log("worker error:", e)
             say(chat_id, f"❌ Agent error: {e}")
@@ -175,7 +196,7 @@ def new_unit(chat_id, album=False):
 
 def enqueue(unit):
     chat_id = unit["chat"]
-    jobs.put((chat_id, unit["photos"], "\n".join(unit["text"])))
+    jobs.put((chat_id, unit["photos"], "\n".join(unit["text"]), False))
     n = jobs.unfinished_tasks
     if n > 1:
         say(chat_id, f"Queued (#{n}): I'll start it as soon as the one before it finishes.")
@@ -197,7 +218,10 @@ def on_message(msg):
                      "Optionally add a price and collection, e.g. '499 lamps', and a note in your own words about what the product is and does "
                      "(e.g. '99 homemaker. Screw-down clip that seals coffee bags'), which I treat as the truth over the link. "
                      "You can send several products in a row; "
-                     "I'll queue them and do them one by one. Send /undo to remove the last product I published.")
+                     "I'll queue them and do them one by one. Send /undo to remove the last product I published. "
+                     "To redo photos of a product that's already live (no duplicate): /redo <product name> <what to change>, "
+                     "e.g. '/redo Wicker Glow Retro Lamp, more vibrant colours' or '/redo Bean Pod new ad idea'. "
+                     "Attach a photo to use it as the new reference.")
         return
     if text.lower() in ("/cancel", "cancel"):
         had = units.pop(("partial", chat_id), None)
@@ -216,6 +240,26 @@ def on_message(msg):
         log("undo:", last)
         say(chat_id, ("↩️ Removed: " + last[len("UNDONE "):] + ". Gone from the site in about a minute. Send /undo again to remove the one before it.")
             if last.startswith("UNDONE") else "❌ " + last)
+        return
+
+    if text.lower().startswith("/redo"):
+        body = text[5:].strip()
+        if not body:
+            say(chat_id, "Tell me which product and what to change, e.g. /redo Wicker Glow Retro Lamp, more vibrant colours")
+            return
+        unit = new_unit(chat_id)
+        os.makedirs(unit["dir"], exist_ok=True)
+        try:
+            if msg.get("photo"):
+                unit["photos"].append(download(msg["photo"][-1]["file_id"], unit["dir"]))
+            elif (msg.get("document") or {}).get("mime_type", "").startswith("image/"):
+                unit["photos"].append(download(msg["document"]["file_id"], unit["dir"]))
+        except Exception as e:
+            say(chat_id, f"❌ Couldn't download that photo: {e}")
+            return
+        jobs.put((chat_id, unit["photos"], body, True))
+        if jobs.unfinished_tasks > 1:
+            say(chat_id, f"Queued (#{jobs.unfinished_tasks}): I'll start it as soon as the one before it finishes.")
         return
 
     has_photo = bool(msg.get("photo")) or (msg.get("document") or {}).get("mime_type", "").startswith("image/")

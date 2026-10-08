@@ -19,6 +19,8 @@ Photo + link in one message (link in caption) or as two messages. Optional hints
 `https://makerworld.com/... 499 lamps` (price + collection) or `call it Bean Pod`.
 Send photos as "File" instead of "Photo" for full quality. /cancel clears a half-sent request. /undo removes the last product the agent published (repeat to go further back).
 
+**Redo photos of a live product (no duplicate):** `/redo <product name>, <what to change>` e.g. `/redo Wicker Glow Retro Lamp, more vibrant colours`, `/redo Bean Pod only the blue`, `/redo Bean Pod new ad idea`. Attach a photo to use it as the new reference. Only the photos are replaced in place (name, price, description untouched); `.claude/skills/redo-photos` + `scripts/update_product_photos.py`. To roll one back, `git revert` its "Update photos: ..." commit.
+
 ## Notes
 - Your PC must be on and `start_agent.bat` running (put a shortcut in `shell:startup` to auto-start at login).
 - Uses your Claude Code login (usage counts toward your plan) and the Gemini key in Madese Photo Studio's `.env`

@@ -132,9 +132,11 @@ def load_reference_images(rel_paths):
 
 
 def main():
-    input_path, context, out_dir = sys.argv[1], sys.argv[2], sys.argv[3]
-    ad_concept = sys.argv[4].strip() if len(sys.argv) > 4 else ""
-    colors_arg = sys.argv[5].strip() if len(sys.argv) > 5 else ""
+    only = next((a[7:].lower().split(",") for a in sys.argv[1:] if a.startswith("--only=")), None)
+    argv = [a for a in sys.argv if not a.startswith("--only=")]
+    input_path, context, out_dir = argv[1], argv[2], argv[3]
+    ad_concept = argv[4].strip() if len(argv) > 4 else ""
+    colors_arg = argv[5].strip() if len(argv) > 5 else ""
     os.makedirs(out_dir, exist_ok=True)
     photo = Image.open(input_path)
     force_square_output()
@@ -169,6 +171,9 @@ def main():
     for inst, is_main in jobs:
         title = inst.get("title") or inst["id"]
         slug = "main" if is_main else slugify(title)
+        part = "main" if is_main else ("ad" if inst is conceptual_ad else "listing")
+        if only and part not in only:
+            continue
         try:
             result = generate_variant(
                 photo,
@@ -183,7 +188,7 @@ def main():
             print(f"FAIL {slug}: {e}")
 
     # One single-colour photo per colour, re-coloured from the white-background shot so they all stay consistent.
-    if colors_arg:
+    if colors_arg and (not only or "colors" in only):
         try:
             cjobs = color_jobs(colors_arg)
         except ValueError as e:
