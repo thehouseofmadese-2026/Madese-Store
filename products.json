@@ -68,5 +68,10 @@
     "id": "wicker-glow-retro-lamp",
     "name": "Wicker Glow Retro Lamp",
     "price": 749
+  },
+  {
+    "id": "capsule-glow-table-lamp",
+    "name": "Capsule Glow Table Lamp",
+    "price": 399
   }
 ]
