@@ -45,6 +45,28 @@ if (!dataMatch) throw new Error("SITE_DATA block not found in index.html");
 const SITE = JSON.parse(dataMatch[1]);
 const products = (SITE.products || []).filter(p => p && p.id && p.name);
 
+/* ── 2b. shop-level structured data (who we are, how to reach us) on every page ── */
+const B = SITE.brand || {};
+const orgLd = [{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": SITE_URL + "/#org",
+  name: BRAND,
+  url: SITE_URL + "/",
+  logo: SITE_URL + "/favicon-256.png",
+  description: B.tagline || "3D-printed decor and collectibles, designed and made in Ichalkaranji, India.",
+  address: { "@type": "PostalAddress", addressLocality: "Ichalkaranji", addressRegion: "Maharashtra", addressCountry: "IN" },
+  areaServed: "IN",
+  contactPoint: [{ "@type": "ContactPoint", contactType: "customer service", telephone: B.whatsapp ? "+" + B.whatsapp : undefined, email: B.email || undefined, areaServed: "IN", availableLanguage: ["en", "hi"] }]
+}, {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: BRAND,
+  url: SITE_URL + "/",
+  publisher: { "@id": SITE_URL + "/#org" }
+}];
+html = html.replace("</head>", () => `<script type="application/ld+json">${JSON.stringify(orgLd).replace(/</g, "\\u003c")}</script>\n</head>`);
+
 /* ── 3. copy the plain static files ── */
 for (const f of ["favicon-256.png", "favicon.ico", "og-image.png", "robots.txt"]) {
   if (existsSync(join(ROOT, f))) copyFileSync(join(ROOT, f), join(OUT, f));
@@ -134,6 +156,53 @@ writeFileSync(join(OUT, "sitemap.xml"),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
   urls.map(u => `  <url>\n    <loc>${esc(u.loc)}</loc>\n    <lastmod>${day}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${u.pri}</priority>\n  </url>`).join("\n") +
   `\n</urlset>\n`);
+
+/* ── 6. llms.txt: a plain-text summary for AI assistants ── */
+const nice = c => String(c || "").replace(/\s+/g, " ").trim();
+const llms = [
+  `# ${BRAND}`,
+  ``,
+  `> ${nice(B.tagline) || "3D-printed decor and collectibles designed and made in Ichalkaranji, Maharashtra, India."} Every piece is designed by us and printed on our own machines. Ships across India; cash on delivery and UPI/cards (Razorpay) are available.`,
+  ``,
+  `## Products`,
+  ...products.map(p => `- [${p.name}](${SITE_URL}/product/${encodeURIComponent(p.id)}): Rs ${p.price}. ${clip(p.desc, 160)}`),
+  ``,
+  `## About and policies`,
+  `- Home page: ${SITE_URL}/`,
+  `- Based in Ichalkaranji, Maharashtra, India. GST and Udyam registered MSME.`,
+  `- Dispatch: in-stock items within 48 working hours; made-to-order items in 3-6 working days. Delivery 3-7 working days after dispatch.`,
+  `- Damaged or defective items: contact within 7 days of delivery for a free replacement or refund.`,
+  `- Contact: WhatsApp +${B.whatsapp || ""}, email ${B.email || ""}`,
+  ``
+].join("\n");
+writeFileSync(join(OUT, "llms.txt"), llms);
+
+/* ── 7. Google Merchant Center product feed ── */
+const x = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const categoryMap = { Lamps: "Home & Garden > Lighting > Lamps", Homemaker: "Home & Garden > Household Supplies" };
+const feedItem = p => {
+  const imgs = [p.img, ...(p.gallery || [])].filter(Boolean).map(abs);
+  const onSale = p.mrp > p.price;
+  const lines = [
+    `<g:id>${x(p.id)}</g:id>`,
+    `<g:title>${x(clip(p.name, 150))}</g:title>`,
+    `<g:description>${x(clip(p.desc || p.name, 4900))}</g:description>`,
+    `<g:link>${x(SITE_URL + "/product/" + encodeURIComponent(p.id))}</g:link>`,
+    imgs[0] && `<g:image_link>${x(imgs[0])}</g:image_link>`,
+    ...imgs.slice(1, 10).map(u => `<g:additional_image_link>${x(u)}</g:additional_image_link>`),
+    `<g:availability>in_stock</g:availability>`,
+    `<g:price>${Number(onSale ? p.mrp : p.price).toFixed(2)} INR</g:price>`,
+    onSale && `<g:sale_price>${Number(p.price).toFixed(2)} INR</g:sale_price>`,
+    `<g:brand>${x(BRAND)}</g:brand>`,
+    `<g:condition>new</g:condition>`,
+    `<g:identifier_exists>no</g:identifier_exists>`,
+    p.collection && `<g:product_type>${x(p.collection)}</g:product_type>`,
+    categoryMap[p.collection] && `<g:google_product_category>${x(categoryMap[p.collection])}</g:google_product_category>`
+  ].filter(Boolean);
+  return `    <item>\n${lines.map(l => "      " + l).join("\n")}\n    </item>`;
+};
+writeFileSync(join(OUT, "merchant-feed.xml"),
+  `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n  <channel>\n    <title>${x(BRAND)}</title>\n    <link>${SITE_URL}/</link>\n    <description>${x(BRAND)} product feed</description>\n${products.map(feedItem).join("\n")}\n  </channel>\n</rss>\n`);
 
 const outBytes = Buffer.byteLength(html);
 console.log(`build-site: ${products.length} product pages, ${imageCount} images extracted, index.html ${(inBytes / 1e6).toFixed(2)} MB -> ${(outBytes / 1e6).toFixed(2)} MB`);
