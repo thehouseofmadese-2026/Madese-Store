@@ -502,6 +502,15 @@ section{padding:64px 0}
 .pdp-sharebox{display:flex;gap:8px;flex-wrap:wrap}
 .pdp-sh-btn{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--ink);border-radius:10px;background:#fff;padding:10px 16px;min-height:44px;font-weight:700;font-size:14px}
 .pdp-sh-btn:hover{background:var(--marigold)}
+/* ── product page: swipeable photo ── */
+.pdp-main-img{touch-action:pan-y;overflow:hidden}
+.pdp-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);background:rgba(255,255,255,.92);color:var(--ink);font-size:26px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0 0 3px;z-index:2}
+.pdp-nav.prev{left:12px}.pdp-nav.next{right:12px}
+.pdp-nav:hover{background:var(--marigold)}
+.pdp-dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:6px;pointer-events:none}
+.pdp-dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.75);border:1.5px solid var(--ink)}
+.pdp-dots i.on{background:var(--ink)}
+@media (pointer:coarse){.pdp-nav{display:none}}
 /* ── motion: the hero rises on load, sections reveal on scroll ── */
 @media (prefers-reduced-motion:no-preference){
   @keyframes madeseRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
@@ -1640,12 +1649,13 @@ function productImages(p){
   (p.gallery||[]).forEach(g=>{ if(g) imgs.push(g); });
   return imgs;
 }
-let pdpCurrentId = null, pdpSelectedVariant = null, pdpSelectedColor = null;
+let pdpCurrentId = null, pdpSelectedVariant = null, pdpSelectedColor = null, pdpImgs = [], pdpIdx = 0;
 const HOME_TITLE = "House of Madese | 3D-Printed Decor & Collectibles — Made in India";
 function openPdp(id, fromRoute){
   const p = SITE.products.find(x=>x.id===id); if(!p) return;
   pdpCurrentId = id; pdpSelectedVariant = null; pdpSelectedColor = null;
   const imgs = productImages(p);
+  pdpImgs = imgs; pdpIdx = 0;
   const save = p.mrp>p.price ? Math.round((1-p.price/p.mrp)*100) : 0;
   showPdpImage(imgs[0]||"", p.imgNote);
   $("pdpThumbs").innerHTML = imgs.length>1 ? imgs.map((im,i)=>
@@ -1720,14 +1730,34 @@ async function copyProductLink(id){
 }
 function showPdpImage(img, note){
   const el = $("pdpMain");
-  if(img){ el.style.background = `url('${img}') center/cover no-repeat`; el.innerHTML = ""; }
+  if(img){
+    el.style.background = `url('${img}') center/cover no-repeat`;
+    const i = pdpImgs.indexOf(img); if(i >= 0) pdpIdx = i;
+    const many = pdpImgs.length > 1;
+    el.innerHTML = many ? `<button type="button" class="pdp-nav prev" aria-label="Previous photo" onclick="stepPdpImage(-1)">‹</button><button type="button" class="pdp-nav next" aria-label="Next photo" onclick="stepPdpImage(1)">›</button><div class="pdp-dots" aria-hidden="true">${pdpImgs.map((_,k)=>`<i class="${k===pdpIdx?"on":""}"></i>`).join("")}</div>` : "";
+    document.querySelectorAll("#pdpThumbs .pdp-thumb").forEach((t,k)=>t.classList.toggle("active", k===pdpIdx && i >= 0));
+  }
   else { el.style.background = ""; el.innerHTML = `<div class="ph-label">${esc(note||"Add photos in Admin → Products")}</div>`; }
 }
+function stepPdpImage(d){
+  if(pdpImgs.length < 2) return;
+  pdpIdx = (pdpIdx + d + pdpImgs.length) % pdpImgs.length;
+  showPdpImage(pdpImgs[pdpIdx], "");
+}
 function pickPdpImage(thumb, encImg){
-  document.querySelectorAll(".pdp-thumb:not([data-variant])").forEach(t=>t.classList.remove("active"));
-  thumb.classList.add("active");
   showPdpImage(decodeURIComponent(encImg), "");
 }
+/* swipe the main photo (finger or mouse drag); a mostly-horizontal move of 40px+ changes photo */
+(function(){
+  const el = document.getElementById("pdpMain"); if(!el) return;
+  let x0 = null, y0 = 0;
+  el.addEventListener("touchstart", e=>{ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, {passive:true});
+  el.addEventListener("touchend", e=>{
+    if(x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+    if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) stepPdpImage(dx < 0 ? 1 : -1);
+  }, {passive:true});
+})();
 function pickVariant(i){
   const p = SITE.products.find(x=>x.id===pdpCurrentId); if(!p) return;
   const v = (p.variants||[])[i]; if(!v) return;
