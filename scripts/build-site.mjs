@@ -9,7 +9,7 @@
 //   3. sitemap.xml lists the home page and every product
 // Run locally:  node scripts/build-site.mjs   (then serve dist/)
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, existsSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -68,7 +68,7 @@ const orgLd = [{
 html = html.replace("</head>", () => `<script type="application/ld+json">${JSON.stringify(orgLd).replace(/</g, "\\u003c")}</script>\n</head>`);
 
 /* ── 3. copy the plain static files ── */
-for (const f of ["favicon-256.png", "favicon.ico", "og-image.png", "robots.txt"]) {
+for (const f of ["favicon-256.png", "favicon.ico", "og-image.png", "robots.txt", ...readdirSync(ROOT).filter(n => /^google[0-9a-f]+.html$/.test(n))]) {
   if (existsSync(join(ROOT, f))) copyFileSync(join(ROOT, f), join(OUT, f));
 }
 writeFileSync(join(OUT, "index.html"), html);
