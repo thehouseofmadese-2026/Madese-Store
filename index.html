@@ -484,6 +484,9 @@ section{padding:64px 0}
   .step{padding:16px}
   .step p{font-size:14px}
 }
+.card-hit{position:absolute;inset:0;z-index:1}
+.card-hit:focus-visible{outline:3px solid var(--signal);outline-offset:-3px}
+.card-body h3 a:hover{color:var(--molten)}
 /* ── motion: the hero rises on load, sections reveal on scroll ── */
 @media (prefers-reduced-motion:no-preference){
   @keyframes madeseRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
@@ -1599,13 +1602,14 @@ function renderProducts(){
     const save = p.mrp>p.price ? Math.round((1-p.price/p.mrp)*100) : 0;
     const opts = cardOpts(p);
     return `<article class="card">
-      <div class="card-img" onclick="openPdp('${esc(p.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPdp('${esc(p.id)}')}" role="button" tabindex="0" aria-label="View ${esc(p.name)}" style="${p.img?`background:url('${p.img}') center/cover no-repeat`:""}">
+      <div class="card-img" style="${p.img?`background:url('${p.img}') center/cover no-repeat`:""}">
+        <a class="card-hit" href="/product/${encodeURIComponent(p.id)}" onclick="return pdpLink(event,'${esc(p.id)}')" aria-label="View ${esc(p.name)}"></a>
         <button class="heart-btn" data-heart="${esc(p.id)}" onclick="event.stopPropagation();toggleWishlist('${esc(p.id)}')" aria-label="Save to wishlist">&#9825;</button>
         ${p.img?"":`<div class="ph-label">${esc(p.imgNote||"Add photo in Admin → Products")}</div>`}
       </div>
       <div class="card-body">
         <span class="card-col">${esc(p.collection)}</span>
-        <h3 onclick="openPdp('${esc(p.id)}')">${esc(p.name)}</h3>
+        <h3><a href="/product/${encodeURIComponent(p.id)}" onclick="return pdpLink(event,'${esc(p.id)}')">${esc(p.name)}</a></h3>
         ${opts?`<div class="card-opts">${esc(opts)}</div>`:""}
         <div class="price-row"><span class="price">${money(p.price)}</span>${p.mrp>p.price?`<span class="strike">${money(p.mrp)}</span>`:""}${save?`<span class="off-pill">${save}% off</span>`:""}</div>
         <button class="add-btn" onclick="addToCart('${esc(p.id)}')">Add to cart</button>
@@ -1621,7 +1625,8 @@ function productImages(p){
   return imgs;
 }
 let pdpCurrentId = null, pdpSelectedVariant = null, pdpSelectedColor = null;
-function openPdp(id){
+const HOME_TITLE = "House of Madese | 3D-Printed Decor & Collectibles — Made in India";
+function openPdp(id, fromRoute){
   const p = SITE.products.find(x=>x.id===id); if(!p) return;
   pdpCurrentId = id; pdpSelectedVariant = null; pdpSelectedColor = null;
   const imgs = productImages(p);
@@ -1665,6 +1670,8 @@ function openPdp(id){
   if(pdpHeart) pdpHeart.setAttribute("data-heart", p.id);
   $("pdpOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
+  document.title = p.name + " | House of Madese";
+  if(!fromRoute){ try{ history.pushState({pdp:id}, "", "/product/" + encodeURIComponent(id)); }catch(e){} }
   renderWishlistHearts();
 }
 function showPdpImage(img, note){
@@ -1693,7 +1700,22 @@ function pickColor(i){
   const lbl = $("pdpColorLabel"); if(lbl) lbl.textContent = "Selected: " + (c.name||"—");
   if(c.img) showPdpImage(c.img, "");
 }
-function closePdp(){ $("pdpOverlay").classList.remove("open"); document.body.style.overflow = ""; }
+function closePdpUI(){ $("pdpOverlay").classList.remove("open"); document.body.style.overflow = ""; document.title = HOME_TITLE; }
+function closePdp(){
+  const wasOpen = $("pdpOverlay").classList.contains("open");
+  closePdpUI();
+  if(!wasOpen) return;
+  try{
+    if(history.state && history.state.pdp) history.back();
+    else if(/^\/product\//.test(location.pathname)) history.replaceState({}, "", "/");
+  }catch(e){}
+}
+function pdpRouteId(){ const m = location.pathname.match(/^\/product\/([^\/?#]+)\/?$/); return m ? decodeURIComponent(m[1]) : null; }
+function pdpLink(e, id){ if(e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return true; e.preventDefault(); openPdp(id); return false; }
+window.addEventListener("popstate", ()=>{
+  const id = pdpRouteId();
+  if(id && SITE.products.some(p=>p.id===id)) openPdp(id, true); else closePdpUI();
+});
 
 /* ── Policy pages ── */
 function openPolicy(key){
@@ -2486,9 +2508,24 @@ function sanitizePublishedDom(root){
     if(seen.has(key)) el.remove(); else seen.add(key);
   });
 }
-function publishSite(){
+async function inlineBuildImages(obj){
+  const cache = {};
+  const toData = async url=>{
+    if(cache[url]) return cache[url];
+    const r = await fetch(url); if(!r.ok) throw new Error("Couldn't load image " + url);
+    return (cache[url] = await readFileAsDataURL(await r.blob()));
+  };
+  async function walk(v){
+    if(typeof v === "string") return /^\/img\/p\/[0-9a-f]{8,}\.(jpg|jpeg|png|webp)$/.test(v) ? toData(v) : v;
+    if(Array.isArray(v)) return Promise.all(v.map(walk));
+    if(v && typeof v === "object"){ const o = {}; for(const k of Object.keys(v)) o[k] = await walk(v[k]); return o; }
+    return v;
+  }
+  return walk(obj);
+}
+async function publishSite(){
   try{
-    const clone = SITE;
+    const clone = await inlineBuildImages(SITE);
     const json = JSON.stringify(clone, null, 1).replace(/<\//g, "<\\/");
     $("SITE_DATA").textContent = json;
     // reset UI state before serializing
@@ -2927,6 +2964,11 @@ async function submitReturnRequest(rowId, orderId){
 loadLocalCart();
 loadDraft();
 renderAll();
+{ // landed straight on /product/<id>: drop the crawler copy and open that product
+  const ss = document.getElementById("ssrProduct"); if(ss) ss.remove();
+  const rid = pdpRouteId();
+  if(rid && SITE.products.some(p=>p.id===rid)) openPdp(rid, true);
+}
 initCustomerSession();
 if(location.hash === "#admin" || /^\/admin\/?$/.test(location.pathname)){
   openAdmin();

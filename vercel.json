@@ -1,4 +1,15 @@
 {
+  "buildCommand": "node scripts/build-site.mjs",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/*.js": { "includeFiles": "*.json" }
+  },
+  "headers": [
+    {
+      "source": "/img/p/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ],
   "rewrites": [
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/(.*)", "destination": "/index.html" }

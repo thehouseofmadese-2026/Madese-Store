@@ -7,3 +7,4 @@ scripts/telegram_agent/agent.log
 .playwright-cli/
 
 .taste-skill/
+dist/
