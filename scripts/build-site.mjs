@@ -149,9 +149,44 @@ for (const p of products) {
   writeFileSync(join(dir, "index.html"), productPage(p));
 }
 
+/* ── 4b. policy pages with their own addresses (Google Merchant Center needs a return-policy URL) ── */
+const POLICY_PAGES = [["returns", "Returns & Replacement"], ["shipping", "Shipping & Delivery"], ["faq", "Frequently Asked Questions"], ["privacy", "Privacy Policy"], ["terms", "Terms of Service"]];
+const policyUrls = [];
+function policyHtml(key, title, body) {
+  const url = `${SITE_URL}/${key}`;
+  const blocks = String(body).split(/\n\s*\n/).map(b => b.trim()).filter(Boolean).map(b => {
+    const lines = b.split("\n");
+    if (/^[A-Z0-9 ?&'’,.\/-]{3,}$/.test(lines[0]) && lines[0] === lines[0].toUpperCase()) {
+      const rest = lines.slice(1).join(" ").trim();
+      return `<h2>${esc(lines[0])}</h2>` + (rest ? `<p>${esc(rest)}</p>` : "");
+    }
+    return `<p>${esc(lines.join(" "))}</p>`;
+  }).join("\n");
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(title)} | ${BRAND}</title>
+<meta name="description" content="${esc(clip(title + " for " + BRAND + ", 3D-printed decor from Ichalkaranji, India.", 158))}">
+<link rel="canonical" href="${esc(url)}">
+<link rel="icon" href="/favicon-256.png">
+<style>body{margin:0;background:#FAFAF7;color:#16150F;font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:720px;margin:0 auto;padding:32px 20px 64px}a{color:#B23E15}.brand{font-weight:800;font-size:20px;text-decoration:none;color:#16150F}h1{font-size:34px;line-height:1.15;margin:28px 0 16px}h2{font-size:15px;letter-spacing:.06em;margin:28px 0 6px}p{margin:0 0 12px}nav{margin-top:40px;padding-top:16px;border-top:2px solid #16150F;font-size:15px}nav a{margin-right:16px}</style>
+</head><body><main>
+<a class="brand" href="/">${BRAND}</a>
+<h1>${esc(title)}</h1>
+${blocks}
+<nav>${POLICY_PAGES.map(([k, t]) => `<a href="/${k}">${esc(t)}</a>`).join("")}<a href="/">Back to the shop</a></nav>
+</main></body></html>`;
+}
+for (const [key, title] of POLICY_PAGES) {
+  const pol = (SITE.policies || {})[key];
+  if (!pol || !pol.body) continue;
+  mkdirSync(join(OUT, key), { recursive: true });
+  writeFileSync(join(OUT, key, "index.html"), policyHtml(key, pol.title || title, pol.body));
+  policyUrls.push(`${SITE_URL}/${key}`);
+}
+
 /* ── 5. sitemap ── */
 const day = new Date().toISOString().slice(0, 10);
-const urls = [{ loc: SITE_URL + "/", pri: "1.0" }, ...products.map(p => ({ loc: `${SITE_URL}/product/${encodeURIComponent(p.id)}`, pri: "0.8" }))];
+const urls = [{ loc: SITE_URL + "/", pri: "1.0" }, ...products.map(p => ({ loc: `${SITE_URL}/product/${encodeURIComponent(p.id)}`, pri: "0.8" })), ...policyUrls.map(loc => ({ loc, pri: "0.3" }))];
 writeFileSync(join(OUT, "sitemap.xml"),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
   urls.map(u => `  <url>\n    <loc>${esc(u.loc)}</loc>\n    <lastmod>${day}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${u.pri}</priority>\n  </url>`).join("\n") +
