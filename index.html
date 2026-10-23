@@ -487,6 +487,21 @@ section{padding:64px 0}
 .card-hit{position:absolute;inset:0;z-index:1}
 .card-hit:focus-visible{outline:3px solid var(--signal);outline-offset:-3px}
 .card-body h3 a:hover{color:var(--molten)}
+/* ── product page: options under the photos, share ── */
+.pdp{position:relative}
+.pdp-thumbs:empty{display:none}
+.pdp-options{display:grid;gap:16px;padding:16px;border-top:2px solid var(--ink);background:#fff}
+.pdp-options:empty{display:none}
+.pdp-opt-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.pdp-opt-head b{font-size:16px}
+.pdp-opt-head .meta{font-size:14px;color:rgba(22,21,15,.75)}
+.pdp-swatch{width:44px;height:44px}
+.pdp-meta-row{display:flex;justify-content:flex-start;flex-wrap:wrap;align-items:center;gap:12px}
+.pdp-share{display:inline-flex;align-items:center;gap:8px;background:transparent;border:2px solid var(--ink);border-radius:99px;padding:8px 16px;min-height:40px;font-weight:700;font-size:14px}
+.pdp-share:hover{background:var(--marigold)}
+.pdp-sharebox{display:flex;gap:8px;flex-wrap:wrap}
+.pdp-sh-btn{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--ink);border-radius:10px;background:#fff;padding:10px 16px;min-height:44px;font-weight:700;font-size:14px}
+.pdp-sh-btn:hover{background:var(--marigold)}
 /* ── motion: the hero rises on load, sections reveal on scroll ── */
 @media (prefers-reduced-motion:no-preference){
   @keyframes madeseRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
@@ -667,6 +682,7 @@ section{padding:64px 0}
       <div class="pdp-gallery">
         <div class="pdp-main-img" id="pdpMain"></div>
         <div class="pdp-thumbs" id="pdpThumbs"></div>
+        <div class="pdp-options" id="pdpOptions"></div>
       </div>
       <div class="pdp-info" id="pdpInfo"></div>
     </div>
@@ -1634,26 +1650,14 @@ function openPdp(id, fromRoute){
   showPdpImage(imgs[0]||"", p.imgNote);
   $("pdpThumbs").innerHTML = imgs.length>1 ? imgs.map((im,i)=>
     `<div class="pdp-thumb ${i===0?"active":""}" style="background:url('${im}')" onclick="pickPdpImage(this,'${encodeURIComponent(im)}')"></div>`).join("") : "";
+  $("pdpOptions").innerHTML = pdpOptionsHtml(p);
   $("pdpInfo").innerHTML = `
-    <span class="series-badge">${esc(p.collection)}</span>
+    <div class="pdp-meta-row"><span class="series-badge">${esc(p.collection)}</span><button type="button" class="pdp-share" id="pdpShareBtn" onclick="shareProduct('${esc(p.id)}')" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Share</button></div>
+    <div class="pdp-sharebox hidden" id="pdpShareBox"></div>
     <h2>${esc(p.name)}</h2>
     <div class="pdp-price"><span class="price">${money(p.price)}</span>${p.mrp>p.price?`<span class="strike">${money(p.mrp)}</span><span class="save-tag" style="position:static;transform:none">SAVE ${save}%</span>`:""}</div>
     <div class="pdp-specs">${(p.specs||[]).map(s=>`<span class="chip">${esc(s)}</span>`).join("")}</div>
     <p class="pdp-desc">${esc(p.desc||"")}</p>
-    ${p.showVariants && (p.variants||[]).length ? `
-    <div class="pdp-variants" style="margin-bottom:16px">
-      <div style="font-weight:700;margin-bottom:8px">Design</div>
-      <div class="pdp-opt-row">${p.variants.map((v,vi)=>
-        `<div class="pdp-thumb" data-variant="${vi}" style="${v.img?`background:url('${v.img}')`:""}" title="${esc(v.name||"")}" onclick="pickVariant(${vi})"></div>`).join("")}</div>
-      <div class="meta" id="pdpVariantLabel" style="margin-top:4px">&nbsp;</div>
-    </div>` : ""}
-    ${p.showColors && (p.colors||[]).length ? `
-    <div class="pdp-colors" style="margin-bottom:16px">
-      <div style="font-weight:700;margin-bottom:8px">Color</div>
-      <div class="pdp-opt-row">${p.colors.map((c,ci)=>
-        `<div class="pdp-swatch" data-color="${ci}" style="background:${c.img?`url('${c.img}')`:esc(c.swatch||"#cccccc")}" title="${esc(c.name||"")}" onclick="pickColor(${ci})"></div>`).join("")}</div>
-      <div class="meta" id="pdpColorLabel" style="margin-top:4px">&nbsp;</div>
-    </div>` : ""}
     ${isCustomizableProduct(p) ? `
     <div class="pdp-customize" style="border:2px dashed var(--ink);border-radius:12px;padding:14px;margin-bottom:16px">
       <div style="font-weight:700;margin-bottom:8px">🎨 Customize this (optional)</div>
@@ -1673,6 +1677,46 @@ function openPdp(id, fromRoute){
   document.title = p.name + " | House of Madese";
   if(!fromRoute){ try{ history.pushState({pdp:id}, "", "/product/" + encodeURIComponent(id)); }catch(e){} }
   renderWishlistHearts();
+}
+function pdpOptionsHtml(p){
+  const out = [];
+  if(p.showVariants && (p.variants||[]).length){
+    out.push(`<div class="pdp-opt"><div class="pdp-opt-head"><b>Choose a design</b><span class="meta" id="pdpVariantLabel">${p.variants.length} designs available</span></div>
+      <div class="pdp-opt-row">${p.variants.map((v,vi)=>
+        `<div class="pdp-thumb" data-variant="${vi}" style="${v.img?`background:url('${v.img}')`:""}" title="${esc(v.name||"")}" onclick="pickVariant(${vi})"></div>`).join("")}</div></div>`);
+  }
+  if(p.showColors && (p.colors||[]).length){
+    out.push(`<div class="pdp-opt"><div class="pdp-opt-head"><b>Choose a colour</b><span class="meta" id="pdpColorLabel">${p.colors.length} colours available</span></div>
+      <div class="pdp-opt-row">${p.colors.map((c,ci)=>
+        `<div class="pdp-swatch" data-color="${ci}" style="background:${c.img?`url('${c.img}')`:esc(c.swatch||"#cccccc")}" title="${esc(c.name||"")}" onclick="pickColor(${ci})"></div>`).join("")}</div></div>`);
+  }
+  return out.join("");
+}
+/* ── share a product ── */
+function productUrl(id){
+  const base = /(^|\.)houseofmadese\.com$/.test(location.hostname) ? "https://www.houseofmadese.com" : location.origin;
+  return base + "/product/" + encodeURIComponent(id);
+}
+async function shareProduct(id){
+  const p = SITE.products.find(x=>x.id===id); if(!p) return;
+  const url = productUrl(id), text = p.name + " — " + money(p.price) + " at House of Madese";
+  if(navigator.share && matchMedia("(pointer:coarse)").matches){
+    try{ await navigator.share({ title:p.name, text, url }); return; }
+    catch(e){ if(e && e.name === "AbortError") return; }
+  }
+  const box = $("pdpShareBox"), btn = $("pdpShareBtn");
+  const open = box.classList.toggle("hidden") === false;
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+  if(!open) return;
+  box.innerHTML = `<a class="pdp-sh-btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text + " " + url)}">WhatsApp</a>
+    <button type="button" class="pdp-sh-btn" id="pdpCopyBtn" onclick="copyProductLink('${esc(id)}')">Copy link</button>
+    <a class="pdp-sh-btn" href="mailto:?subject=${encodeURIComponent(p.name)}&body=${encodeURIComponent(text + "\n" + url)}">Email</a>`;
+}
+async function copyProductLink(id){
+  const url = productUrl(id), b = $("pdpCopyBtn");
+  try{ await navigator.clipboard.writeText(url); }
+  catch(e){ const t = document.createElement("textarea"); t.value = url; document.body.appendChild(t); t.select(); try{ document.execCommand("copy"); }catch(_){} t.remove(); }
+  if(b){ b.textContent = "Link copied ✓"; setTimeout(()=>{ b.textContent = "Copy link"; }, 2000); }
 }
 function showPdpImage(img, note){
   const el = $("pdpMain");
