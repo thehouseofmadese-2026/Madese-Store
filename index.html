@@ -635,7 +635,7 @@ section{padding:64px 0}
 
 <footer id="contact">
   <div class="wrap">
-    <div class="foot-grid" id="footGrid"><div class="foot-brand"><a class="logo" href="#top" style="color:var(--paper)">House of <em>Madese</em></a><p>3D-printed decor and collectibles from Ichalkaranji, Maharashtra. GST &amp; Udyam registered MSME.</p></div><div><h4>Shop</h4><a href="#drops">New Drops</a><a href="#collections">Collections</a><a href="#story">Our Story</a></div><div><h4>Info</h4><a href="javascript:void(0)" onclick="openPolicy('faq')">FAQ</a><a href="javascript:void(0)" onclick="openPolicy('shipping')">Shipping &amp; Returns</a><a href="javascript:void(0)" onclick="openPolicy('returns')">Replacement Policy</a><a href="javascript:void(0)" onclick="openPolicy('privacy')">Privacy Policy</a><a href="javascript:void(0)" onclick="openPolicy('terms')">Terms</a></div><div><h4>Reach Us</h4><a href="https://www.instagram.com/house_of_madese/" target="_blank" rel="noopener">📷 Instagram</a><a href="#">🛒 Amazon Storefront</a><a href="mailto:thehouseofmadese@gmail.com">✉️ Email us</a></div></div>
+    <div class="foot-grid" id="footGrid"><div class="foot-brand"><a class="logo" href="#top" style="color:var(--paper)">House of <em>Madese</em></a><p>3D-printed decor and collectibles from Ichalkaranji, Maharashtra. GST &amp; Udyam registered MSME.</p></div><div><h4>Shop</h4><a href="#drops">New Drops</a><a href="#collections">Collections</a><a href="#story">Our Story</a></div><div><h4>Info</h4><a href="javascript:void(0)" onclick="openPolicy('faq')">FAQ</a><a href="javascript:void(0)" onclick="openPolicy('shipping')">Shipping &amp; Returns</a><a href="javascript:void(0)" onclick="openPolicy('returns')">Replacement Policy</a><a href="javascript:void(0)" onclick="openPolicy('privacy')">Privacy Policy</a><a href="javascript:void(0)" onclick="openPolicy('terms')">Terms</a></div><div><h4>Reach Us</h4><a href="https://www.instagram.com/house_of_madese/" target="_blank" rel="noopener">📷 Instagram</a><a href="#">🛒 Amazon Storefront</a><a href="#">🛍️ Flipkart Storefront</a><a href="mailto:thehouseofmadese@gmail.com">✉️ Email us</a></div></div>
     <div class="foot-legal"><span id="footLegal">© 2026 House of Madese · Ichalkaranji, MH</span><span class="mono" id="footTag">EVERY LAYER COUNTS.</span></div>
   </div>
 </footer>
@@ -1385,6 +1385,7 @@ section{padding:64px 0}
       "label": "Amazon Storefront",
       "href": "#"
      },
+     {  "label": "Flipkart Storefront",  "href": "#"},
      {
       "label": "Email us",
       "href": "mailto:thehouseofmadese@gmail.com"
@@ -1558,7 +1559,7 @@ function renderAll(){
   $("nlCta").href = `https://wa.me/${B.whatsapp}?text=${encodeURIComponent("Hi! Please add me to the drop alerts.")}`;
 
   const F = SITE.footer;
-  const SOCIAL_ICONS = { instagram:"📷", facebook:"📘", twitter:"𝕏", x:"𝕏", youtube:"▶️", pinterest:"📌", amazon:"🛒", whatsapp:"💬", email:"✉️" };
+  const SOCIAL_ICONS = { instagram:"📷", facebook:"📘", twitter:"𝕏", x:"𝕏", youtube:"▶️", pinterest:"📌", amazon:"🛒", flipkart:"🛍️", whatsapp:"💬", email:"✉️" };
   function iconFor(label){
     const key = label.toLowerCase();
     for(const k in SOCIAL_ICONS) if(key.includes(k)) return SOCIAL_ICONS[k];
