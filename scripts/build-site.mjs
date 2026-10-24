@@ -56,6 +56,7 @@ const orgLd = [{
   logo: SITE_URL + "/favicon-256.png",
   description: B.tagline || "3D-printed decor and collectibles, designed and made in Ichalkaranji, India.",
   address: { "@type": "PostalAddress", addressLocality: "Ichalkaranji", addressRegion: "Maharashtra", addressCountry: "IN" },
+  sameAs: ["https://www.instagram.com/house_of_madese/"],
   areaServed: "IN",
   contactPoint: [{ "@type": "ContactPoint", contactType: "customer service", telephone: B.whatsapp ? "+" + B.whatsapp : undefined, email: B.email || undefined, areaServed: "IN", availableLanguage: ["en", "hi"] }]
 }, {

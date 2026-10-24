@@ -635,7 +635,7 @@ section{padding:64px 0}
 
 <footer id="contact">
   <div class="wrap">
-    <div class="foot-grid" id="footGrid"><div class="foot-brand"><a class="logo" href="#top" style="color:var(--paper)">House of <em>Madese</em></a><p>3D-printed decor and collectibles from Ichalkaranji, Maharashtra. GST &amp; Udyam registered MSME.</p></div><div><h4>Shop</h4><a href="#drops">New Drops</a><a href="#collections">Collections</a><a href="#story">Our Story</a></div><div><h4>Info</h4><a href="javascript:void(0)" onclick="openPolicy('faq')">FAQ</a><a href="javascript:void(0)" onclick="openPolicy('shipping')">Shipping &amp; Returns</a><a href="javascript:void(0)" onclick="openPolicy('returns')">Replacement Policy</a><a href="javascript:void(0)" onclick="openPolicy('privacy')">Privacy Policy</a><a href="javascript:void(0)" onclick="openPolicy('terms')">Terms</a></div><div><h4>Reach Us</h4><a href="#">📷 Instagram</a><a href="#">🛒 Amazon Storefront</a><a href="mailto:hello@houseofmadese.in">✉️ Email us</a></div></div>
+    <div class="foot-grid" id="footGrid"><div class="foot-brand"><a class="logo" href="#top" style="color:var(--paper)">House of <em>Madese</em></a><p>3D-printed decor and collectibles from Ichalkaranji, Maharashtra. GST &amp; Udyam registered MSME.</p></div><div><h4>Shop</h4><a href="#drops">New Drops</a><a href="#collections">Collections</a><a href="#story">Our Story</a></div><div><h4>Info</h4><a href="javascript:void(0)" onclick="openPolicy('faq')">FAQ</a><a href="javascript:void(0)" onclick="openPolicy('shipping')">Shipping &amp; Returns</a><a href="javascript:void(0)" onclick="openPolicy('returns')">Replacement Policy</a><a href="javascript:void(0)" onclick="openPolicy('privacy')">Privacy Policy</a><a href="javascript:void(0)" onclick="openPolicy('terms')">Terms</a></div><div><h4>Reach Us</h4><a href="https://www.instagram.com/house_of_madese/" target="_blank" rel="noopener">📷 Instagram</a><a href="#">🛒 Amazon Storefront</a><a href="mailto:thehouseofmadese@gmail.com">✉️ Email us</a></div></div>
     <div class="foot-legal"><span id="footLegal">© 2026 House of Madese · Ichalkaranji, MH</span><span class="mono" id="footTag">EVERY LAYER COUNTS.</span></div>
   </div>
 </footer>
@@ -892,7 +892,7 @@ section{padding:64px 0}
     <div id="priceSyncBox"></div></div>
   <div class="admin-card"><h3>Contact</h3>
     <div class="field"><label>WhatsApp number (digits only, with 91)</label><input id="st_wa" value="91XXXXXXXXXX"></div>
-    <div class="field"><label>Email</label><input id="st_email" value="hello@houseofmadese.in"></div>
+    <div class="field"><label>Email</label><input id="st_email" value="thehouseofmadese@gmail.com"></div>
     <div class="field"><label>GSTIN (optional — shows in footer once filled)</label><input id="st_gstin" value="" placeholder="22AAAAA0000A1Z5"></div></div>
   <div class="admin-card"><h3>Admin security</h3>
     <div class="field"><label>Admin password (used only until Supabase login is connected)</label><input id="st_pass" value="madese123"></div>
@@ -1379,7 +1379,7 @@ section{padding:64px 0}
     "links": [
      {
       "label": "Instagram",
-      "href": "#"
+      "href": "https://www.instagram.com/house_of_madese/"
      },
      {
       "label": "Amazon Storefront",
@@ -1387,7 +1387,7 @@ section{padding:64px 0}
      },
      {
       "label": "Email us",
-      "href": "mailto:hello@houseofmadese.in"
+      "href": "mailto:thehouseofmadese@gmail.com"
      }
     ]
    }
@@ -1568,7 +1568,7 @@ function renderAll(){
     `<div class="foot-brand"><a class="logo" href="#top" style="color:var(--paper)">${esc(B.name)} <em>${esc(B.accent)}</em></a><p>${esc(B.tagline)}</p></div>` +
     F.columns.map(c=>`<div><h4>${esc(c.head)}</h4>${c.links.map(l=>{
       const icon = c.head.toLowerCase().includes("reach") ? iconFor(l.label)+" " : "";
-      return l.policy?`<a href="javascript:void(0)" onclick="openPolicy('${l.policy}')">${icon}${esc(l.label)}</a>`:`<a href="${esc(l.href)}">${icon}${esc(l.label)}</a>`;
+      return l.policy?`<a href="javascript:void(0)" onclick="openPolicy('${l.policy}')">${icon}${esc(l.label)}</a>`:`<a href="${esc(l.href)}"${/^https?:/.test(l.href||"")?` target="_blank" rel="noopener"`:""}>${icon}${esc(l.label)}</a>`;
     }).join("")}</div>`).join("");
   $("footLegal").textContent = "© " + new Date().getFullYear() + " " + F.legal;
   $("footTag").textContent = F.tag;
