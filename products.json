@@ -83,5 +83,10 @@
     "id": "hearty-hug-planter",
     "name": "Hearty Hug Planter",
     "price": 199
+  },
+  {
+    "id": "gearshift-phone-stand",
+    "name": "Gearshift Phone Stand",
+    "price": 200
   }
 ]
