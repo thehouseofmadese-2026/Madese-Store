@@ -617,7 +617,7 @@ section{padding:64px 0}
     <div class="sec-head"><h2 class="display">Before you order</h2><p>The quick answers. Anything else, we're one WhatsApp message away.</p></div>
     <div class="faq-list">
       <details><summary>How long until it reaches me?</summary><p>In-stock pieces dispatch within 48 hours. Made-to-order pieces are printed after you order and dispatch in 3–6 working days. Delivery then takes 3–7 working days depending on your PIN code, and we send tracking on WhatsApp.</p></details>
-      <details><summary>Can I pay cash on delivery?</summary><p>Yes. Pick Cash on Delivery at checkout and we confirm your order on WhatsApp before it goes to print. You can also pay online with UPI, cards or netbanking through Razorpay.</p></details>
+      <details><summary>Can I pay cash on delivery?</summary><p>Yes. Pick Cash on Delivery at checkout (₹49 COD fee) and we confirm your order on WhatsApp before it goes to print. You can also pay online with UPI, cards or netbanking through Razorpay.</p></details>
       <details><summary>What if it arrives damaged?</summary><p>Send a photo or video and your order ID on WhatsApp within 7 days of delivery. We reprint and reship for free, or refund you, your choice.</p></details>
       <details><summary>Can I get something personalised?</summary><p>Yes. On the photo lamps and other custom pieces you can upload a reference photo and tell us the names, colours, style or size you want, right on the product page.</p></details>
       <details><summary>How do I get the launch discount?</summary><p>Add anything to your cart and the 20% launch offer (code FIRSTLAYER) is applied for you automatically.</p></details>
@@ -715,6 +715,8 @@ section{padding:64px 0}
       <div id="promoMsg" style="font-size:12px;margin-top:4px"></div>
     </div>
     <div class="total-row" id="promoRow" style="display:none;font-size:14px;color:var(--molten)"><span>Discount</span><span id="promoDiscountAmt"></span></div>
+    <div class="total-row" id="shipRow" style="font-size:14px"><span>Shipping</span><span id="shipAmt">₹0</span></div>
+    <div id="shipNudge" style="font-size:12px;color:var(--molten-a11y);margin-top:-6px"></div>
     <div class="total-row"><span>Total</span><span id="cartTotal">₹0</span></div>
     <button class="btn btn-solid" style="justify-content:center" onclick="showCheckoutForm()">Checkout</button>
     <div class="pay-note">Secure checkout. UPI, cards, netbanking or cash on delivery.</div>
@@ -723,17 +725,18 @@ section{padding:64px 0}
     <div class="field"><label>Your name</label><input id="coName" placeholder="Full name"></div>
     <div class="field"><label>Phone (WhatsApp)</label><input id="coPhone" inputmode="numeric" placeholder="10-digit mobile"></div>
     <div class="field"><label>Delivery address</label><textarea id="coAddr" placeholder="House, street, area, city"></textarea></div>
-    <div class="field"><label>PIN code</label><input id="coPin" inputmode="numeric" placeholder="6-digit PIN"></div>
+    <div class="field"><label>PIN code</label><input id="coPin" inputmode="numeric" maxlength="6" placeholder="6-digit PIN" oninput="checkCoPin()"><div id="coPinMsg" style="font-size:12px;margin-top:4px"></div></div>
     <div class="field"><label>Payment method</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;border:2px solid var(--ink);border-radius:9px;padding:9px 14px;cursor:pointer;flex:1;justify-content:center">
           <input type="radio" name="payMethod" value="online" checked="" onchange="updatePayBtn()"> Pay Online
         </label>
         <label style="display:flex;align-items:center;gap:6px;border:2px solid var(--ink);border-radius:9px;padding:9px 14px;cursor:pointer;flex:1;justify-content:center">
-          <input type="radio" name="payMethod" value="cod" onchange="updatePayBtn()"> Cash on Delivery
+          <input type="radio" name="payMethod" value="cod" onchange="updatePayBtn()"> <span>Cash on Delivery<span id="codFeeTag" style="font-size:12px;opacity:.75;white-space:nowrap"></span></span>
         </label>
       </div>
     </div>
+    <div class="pay-note" id="payBreakdown" style="margin:0"></div>
     <button class="btn btn-solid" style="justify-content:center" id="payBtn" onclick="payNow(this)">Pay <span id="payAmt">₹0</span> with Razorpay</button>
     <div class="pay-note" id="codNote" style="display:none">We'll confirm your order on WhatsApp before it goes to print. Pay the courier in cash on delivery.</div>
     <button class="btn btn-small" onclick="hideCheckoutForm()">← Back to cart</button>
@@ -1486,7 +1489,7 @@ section{padding:64px 0}
  "policies": {
   "shipping": {
    "title": "Shipping & Delivery",
-   "body": "House of Madese products are 3D-printed to order in Ichalkaranji, Maharashtra.\n\nDISPATCH TIME\nIn-stock items are dispatched within 48 working hours of a confirmed order. Made-to-order items (most collectibles and larger pieces) are printed after your order is placed and typically dispatch within 3–6 working days. Your order confirmation on WhatsApp will tell you which applies to your items.\n\nDELIVERY TIME\nOnce dispatched, delivery usually takes 3–7 working days depending on your location, via our courier partners. Remote PIN codes may take longer.\n\nSHIPPING CHARGES\nShipping charges (if any) are shown at checkout. Prepaid orders may qualify for free or discounted shipping as noted on the site.\n\nTRACKING\nWe share tracking details over WhatsApp or email once your order ships.\n\nQUESTIONS\nMessage us on WhatsApp any time for an update on your order."
+   "body": "House of Madese products are 3D-printed to order in Ichalkaranji, Maharashtra.\n\nDISPATCH TIME\nIn-stock items are dispatched within 48 working hours of a confirmed order. Made-to-order items (most collectibles and larger pieces) are printed after your order is placed and typically dispatch within 3–6 working days. Your order confirmation on WhatsApp will tell you which applies to your items.\n\nDELIVERY TIME\nOnce dispatched, delivery usually takes 3–7 working days depending on your location, via our courier partners. Remote PIN codes may take longer.\n\nSHIPPING CHARGES\nFlat ₹79 shipping anywhere in India. Orders of ₹999 or more ship free. Cash on Delivery orders have an extra ₹49 COD fee; pay online with UPI, cards or netbanking to skip it. The exact amount is always shown in your cart before you pay.\n\nTRACKING\nWe share tracking details over WhatsApp or email once your order ships.\n\nQUESTIONS\nMessage us on WhatsApp any time for an update on your order."
   },
   "returns": {
    "title": "Returns & Replacement",
@@ -1502,7 +1505,7 @@ section{padding:64px 0}
   },
   "faq": {
    "title": "Frequently Asked Questions",
-   "body": "IS EVERYTHING REALLY 3D-PRINTED?\nYes. Every piece is designed by us and printed on our own machines in Ichalkaranji — nothing here is mass-manufactured or outsourced.\n\nWHAT MATERIAL DO YOU USE?\nMostly PETG (tough, slightly flexible, good for everyday use) and PLA+ for finer detail pieces like the Freedom Series figures. Each product page lists its material.\n\nWHY DO I SEE LINES ON THE SURFACE?\nThose are layer lines from the printing process — they're not a defect. We consider them part of the handmade character of every piece.\n\nHOW LONG UNTIL MY ORDER SHIPS?\nIn-stock drops ship within 48 hours. Made-to-order pieces are printed after you order and typically take 3–6 days before dispatch. See our Shipping & Delivery page for details.\n\nDO YOU OFFER CASH ON DELIVERY?\nYes — choose Cash on Delivery at checkout. We'll confirm your order on WhatsApp before it goes to print.\n\nWHAT IF MY ORDER ARRIVES DAMAGED?\nContact us within 7 days with photos and your order ID — see our Returns & Replacement page. We'll reprint and reship, no drama.\n\nCAN I CUSTOMIZE COLORS OR SIZES?\nMessage us on WhatsApp before ordering — many pieces can be adjusted since we control the whole print process ourselves.\n\nDO YOU SHIP ACROSS INDIA?\nYes, nationwide. Delivery usually takes 3–7 working days after dispatch depending on your location.\n\nHOW DO I TRACK MY ORDER?\nLog in and check My Account → Orders, or message us on WhatsApp with your order ID."
+   "body": "IS EVERYTHING REALLY 3D-PRINTED?\nYes. Every piece is designed by us and printed on our own machines in Ichalkaranji — nothing here is mass-manufactured or outsourced.\n\nWHAT MATERIAL DO YOU USE?\nMostly PETG (tough, slightly flexible, good for everyday use) and PLA+ for finer detail pieces like the Freedom Series figures. Each product page lists its material.\n\nWHY DO I SEE LINES ON THE SURFACE?\nThose are layer lines from the printing process — they're not a defect. We consider them part of the handmade character of every piece.\n\nHOW LONG UNTIL MY ORDER SHIPS?\nIn-stock drops ship within 48 hours. Made-to-order pieces are printed after you order and typically take 3–6 days before dispatch. See our Shipping & Delivery page for details.\n\nDO YOU OFFER CASH ON DELIVERY?\nYes — choose Cash on Delivery at checkout (a ₹49 COD fee applies; paying online skips it). We'll confirm your order on WhatsApp before it goes to print.\n\nWHAT IF MY ORDER ARRIVES DAMAGED?\nContact us within 7 days with photos and your order ID — see our Returns & Replacement page. We'll reprint and reship, no drama.\n\nCAN I CUSTOMIZE COLORS OR SIZES?\nMessage us on WhatsApp before ordering — many pieces can be adjusted since we control the whole print process ourselves.\n\nDO YOU SHIP ACROSS INDIA?\nYes, nationwide. Delivery usually takes 3–7 working days after dispatch depending on your location.\n\nHOW DO I TRACK MY ORDER?\nLog in and check My Account → Orders, or message us on WhatsApp with your order ID."
   }
  },
  "coupon": {
@@ -1766,10 +1769,13 @@ function openPdp(id, fromRoute){
       <div class="meta" style="margin-top:6px">Skip this and we'll follow up on WhatsApp for the details instead.</div>
     </div>` : ""}
     <button class="pdp-add" id="pdpAddBtn" onclick="addToCartFromPdp('${esc(p.id)}')">Add to cart &mdash; ${money(p.price)}</button>
+    <div class="pdp-pin" style="margin-top:14px"><div style="display:flex;gap:8px"><input id="pdpPin" inputmode="numeric" maxlength="6" placeholder="Enter PIN code to check delivery" onkeydown="if(event.key==='Enter')checkPdpPin()" style="flex:1;min-width:0;border:2px solid var(--ink);border-radius:9px;padding:9px 12px;font-family:inherit"><button class="icon-btn" onclick="checkPdpPin()">Check</button></div><div id="pdpPinMsg" style="font-size:13px;margin-top:6px"></div></div>
     <ul class="pdp-assure"><li><span><b>Ships in 48 hours</b> for in-stock items. Made-to-order pieces dispatch in 3–6 working days.</span></li><li><span><b>Pay online or cash on delivery.</b> UPI, cards and netbanking via Razorpay.</span></li><li><span><b>7-day replacement</b> if it arrives damaged. We reprint and reship free.</span></li><li><span>Designed and printed by hand in Ichalkaranji, India.</span></li></ul>
     <a class="pdp-wa" href="${esc($("waFloat").href)}" target="_blank" rel="noopener">Questions? Ask us on WhatsApp</a>`;
   const pdpHeart = document.getElementById("pdpHeartBtn");
   if(pdpHeart) pdpHeart.setAttribute("data-heart", p.id);
+  const pdpPinEl = document.getElementById("pdpPin");
+  if(pdpPinEl && savedPin()){ pdpPinEl.value = savedPin(); checkPdpPin(); }
   $("pdpOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
   document.title = p.name + " | House of Madese";
@@ -1955,7 +1961,21 @@ function currentCustomizations(){
 let appliedPromo = null; // {code, percent} once validated
 function cartSubtotal(){ return Object.entries(cart).reduce((t,[id,q])=>{const p=SITE.products.find(x=>x.id===baseProductId(id));return p?t+p.price*q:t;},0); }
 function promoDiscount(){ return appliedPromo ? Math.round(cartSubtotal() * appliedPromo.percent / 100) : 0; }
-function cartTotal(){ return Math.max(0, cartSubtotal() - promoDiscount()); }
+/* Shipping: same rules the server charges from (shipping.json, served at /shipping.json).
+   Free-shipping threshold is measured on the subtotal BEFORE promo discount. */
+let SHIP = { flat:79, freeAbove:999, codFee:49, bulkyExtra:{} };
+try{ fetch("/shipping.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{ if(j&&typeof j==="object"){ SHIP = {...SHIP, ...j}; renderCart(); updatePayBtn(); } }).catch(()=>{}); }catch(e){}
+function shipNum(v){ return Math.max(0, Math.round(Number(v)||0)); }
+function freeShipGap(){ const f = shipNum(SHIP.freeAbove); return f > 0 ? Math.max(0, f - cartSubtotal()) : Infinity; }
+function shippingFee(){
+  if(!Object.keys(cart).length || freeShipGap() === 0) return 0;
+  const extra = SHIP.bulkyExtra || {};
+  return shipNum(SHIP.flat) + Object.entries(cart).reduce((t,[id,q])=>t + shipNum(extra[baseProductId(id)])*q, 0);
+}
+function codFee(){ return payMethod()==="cod" ? shipNum(SHIP.codFee) : 0; }
+function goodsTotal(){ return Math.max(0, cartSubtotal() - promoDiscount()); }
+function cartTotal(){ return goodsTotal() + shippingFee(); }
+function payTotal(){ return cartTotal() + codFee(); }
 function applyPromo(){
   const code = $("promoInput").value.trim().toUpperCase();
   const msg = $("promoMsg");
@@ -2007,37 +2027,100 @@ function renderCart(){
   const disc = promoDiscount();
   $("promoRow").style.display = disc > 0 ? "" : "none";
   if(disc > 0) $("promoDiscountAmt").textContent = "−" + money(disc);
+  const ship = shippingFee(), gap = freeShipGap();
+  $("shipRow").style.display = items.length ? "" : "none";
+  $("shipAmt").textContent = ship ? money(ship) : "FREE";
+  $("shipNudge").textContent = !items.length ? "" : gap === 0 ? "You've unlocked free shipping ✓"
+    : gap !== Infinity ? "Add " + money(gap) + " more for free shipping" : "";
   $("cartTotal").textContent = money(cartTotal());
   $("cartCount").textContent = items.reduce((n,[,q])=>n+q,0);
-  $("payAmt") && ($("payAmt").textContent = money(cartTotal()));
+  $("payAmt") && ($("payAmt").textContent = money(payTotal()));
 }
 function toggleCart(open){ $("drawer").classList.toggle("open",open); $("overlay").classList.toggle("open",open); if(!open) hideCheckoutForm(); if(window.axelCartComment) window.axelCartComment(open); }
 function showCheckoutForm(){
   if(!cartTotal()){alert("Your queue is empty!");return;}
   $("cartFoot").classList.add("hidden"); $("checkoutForm").classList.remove("hidden");
-  $("payAmt").textContent = money(cartTotal());
+  if(!$("coPin").value && savedPin()) $("coPin").value = savedPin();
   updatePayBtn();
+  if($("coPin").value) checkCoPin();
 }
 function hideCheckoutForm(){ $("checkoutForm").classList.add("hidden"); $("cartFoot").classList.remove("hidden"); }
 function payMethod(){ const r = document.querySelector('input[name="payMethod"]:checked'); return r ? r.value : "online"; }
 function updatePayBtn(){
   const btn = $("payBtn"), note = $("codNote");
+  if(!btn) return;
+  const cf = shipNum(SHIP.codFee), ship = shippingFee(), disc = promoDiscount();
+  if($("codFeeTag")) $("codFeeTag").textContent = cf ? " (+" + money(cf) + ")" : "";
+  if($("payBreakdown")) $("payBreakdown").textContent = "Items " + money(cartSubtotal())
+    + (disc ? " · Discount −" + money(disc) : "")
+    + " · Shipping " + (ship ? money(ship) : "FREE")
+    + (codFee() ? " · COD fee " + money(codFee()) : (cf ? " · Paying online saves you " + money(cf) : ""));
   if(payMethod()==="cod"){
-    btn.innerHTML = 'Place COD Order — <span id="payAmt">'+money(cartTotal())+'</span>';
+    btn.innerHTML = 'Place COD Order — <span id="payAmt">'+money(payTotal())+'</span>';
     note.style.display = "";
   } else {
-    btn.innerHTML = 'Pay <span id="payAmt">'+money(cartTotal())+'</span> with Razorpay';
+    btn.innerHTML = 'Pay <span id="payAmt">'+money(payTotal())+'</span> with Razorpay';
     note.style.display = "none";
+  }
+}
+
+/* ── Delivery check by PIN (Shiprocket, via /api/pincode). Quietly does nothing if it's
+   not set up or slow, so it can never block a sale by itself. ── */
+const pinCache = {};
+async function lookupPin(pin){
+  if(!/^[1-9]\d{5}$/.test(pin)) return null;
+  if(pin in pinCache) return pinCache[pin];
+  try{
+    const r = await fetchWithTimeout("/api/pincode?pin="+pin, {}, 8000);
+    const j = r.ok ? await r.json() : null;
+    return pinCache[pin] = (j && j.configured && !j.unknown) ? j : null;
+  }catch(e){ return null; }
+}
+function pinMsgHtml(j){
+  if(!j) return 'We deliver across India, usually 3–7 days after dispatch.';
+  if(!j.serviceable) return '<span style="color:#C0392B">✗ Our couriers don\'t reach this PIN yet. WhatsApp us and we\'ll try to sort it out.</span>';
+  const d = j.minDays ? (j.maxDays && j.maxDays !== j.minDays ? j.minDays+"–"+j.maxDays : j.minDays) : "";
+  return '<span style="color:var(--molten-a11y)">✓ Delivers here'+(d ? ' in about '+d+' days after dispatch' : '')+'</span>'+(j.cod ? ' · COD available' : ' · Online payment only (no COD here)');
+}
+function savePin(pin){ try{ localStorage.setItem("madese_pin", pin); }catch(e){} }
+function savedPin(){ try{ return localStorage.getItem("madese_pin") || ""; }catch(e){ return ""; } }
+async function checkPdpPin(){
+  const el = $("pdpPin"), msg = $("pdpPinMsg"); if(!el||!msg) return;
+  const pin = el.value.replace(/\D/g,"").slice(0,6); el.value = pin;
+  if(pin.length !== 6){ msg.textContent = "Enter a 6-digit PIN code."; return; }
+  msg.textContent = "Checking…"; savePin(pin);
+  const j = await lookupPin(pin);
+  if($("pdpPin") && $("pdpPin").value === pin) msg.innerHTML = pinMsgHtml(j);
+}
+let coPinInfo = null; // last lookup result for the checkout PIN
+async function checkCoPin(){
+  const el = $("coPin"), msg = $("coPinMsg"), codInput = document.querySelector('input[name="payMethod"][value="cod"]');
+  const pin = el.value.replace(/\D/g,"").slice(0,6); if(el.value !== pin) el.value = pin;
+  coPinInfo = null; if(codInput) codInput.disabled = false;
+  if(pin.length !== 6){ msg.textContent = ""; return; }
+  msg.textContent = "Checking delivery…"; savePin(pin);
+  const j = await lookupPin(pin);
+  if($("coPin").value !== pin) return; // customer kept typing
+  coPinInfo = j;
+  msg.innerHTML = j ? pinMsgHtml(j) : "";
+  if(j && j.serviceable && !j.cod && codInput){
+    codInput.disabled = true;
+    if(codInput.checked){ document.querySelector('input[name="payMethod"][value="online"]').checked = true; updatePayBtn(); }
   }
 }
 
 async function payNow(btn){
   const name=$("coName").value.trim(), phone=$("coPhone").value.trim(), addr=$("coAddr").value.trim(), pin=$("coPin").value.trim();
   if(!name||phone.length<10||!addr||pin.length!==6){ alert("Please fill name, 10-digit phone, address and 6-digit PIN."); return; }
+  if(coPinInfo && coPinInfo.pin === pin && !coPinInfo.serviceable){ alert("Sorry, our couriers don't deliver to PIN "+pin+" yet. Please WhatsApp us and we'll try to arrange it."); return; }
+  if(coPinInfo && coPinInfo.pin === pin && !coPinInfo.cod && payMethod()==="cod"){ alert("Cash on Delivery isn't available for PIN "+pin+". Please pay online."); return; }
   const fullAddr = addr + " — PIN " + pin;
   if(payMethod()==="cod") return payCod(btn, name, phone, fullAddr);
   return payOnline(btn, name, phone, fullAddr);
 }
+
+function coPinNow(){ return ($("coPin").value || "").replace(/\D/g,"").slice(0,6); }
+function customerEmail(){ try{ return (typeof customerUser !== "undefined" && customerUser && customerUser.email) || ""; }catch(e){ return ""; } }
 
 /* A fetch that gives up after 15s instead of hanging indefinitely —
    a slow/dead network shouldn't leave the checkout button stuck forever. */
@@ -2057,7 +2140,7 @@ async function payCod(btn, name, phone, fullAddr){
     const access_token = await getAccessToken();
     const res = await fetchWithTimeout("/api/create-cod-order", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ cart, customer:{ name, phone, address: fullAddr }, access_token, promoCode: appliedPromo ? appliedPromo.code : null, customizations: currentCustomizations() })
+      body: JSON.stringify({ cart, customer:{ name, phone, address: fullAddr, pincode: coPinNow(), email: customerEmail() }, access_token, promoCode: appliedPromo ? appliedPromo.code : null, customizations: currentCustomizations() })
     });
     const data = await res.json();
     if(!res.ok){ throw new Error(data.error || "Could not place order"); }
@@ -2109,7 +2192,8 @@ async function payOnline(btn, name, phone, fullAddr){
               razorpay_order_id: res.razorpay_order_id,
               razorpay_payment_id: res.razorpay_payment_id,
               razorpay_signature: res.razorpay_signature,
-              cart, customer:{ name, phone, address: fullAddr }, access_token, customizations: currentCustomizations()
+              cart, customer:{ name, phone, address: fullAddr, pincode: coPinNow(), email: customerEmail() }, access_token, customizations: currentCustomizations(),
+              promoCode: appliedPromo ? appliedPromo.code : null
             })
           });
           const v = await vr.json();

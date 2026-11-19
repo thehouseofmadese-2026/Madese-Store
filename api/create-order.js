@@ -8,6 +8,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { baseId } from "./_cartHelpers.js";
+import { shippingCharges } from "./_shipping.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 let coupons = [];
 try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) { /* no coupons file — fine, none active */ }
@@ -41,7 +42,10 @@ export default async function handler(req, res) {
       const c = coupons.find(x => x.code.toUpperCase() === String(promoCode).toUpperCase());
       if (c) discount = Math.round(amount * c.percent / 100);
     }
+    const subtotal = amount;
     amount = Math.max(0, amount - discount);
+    const { shipping } = shippingCharges(cart, subtotal, false);
+    amount += shipping;
 
     // Create the Razorpay order via their REST API (Basic auth = key:secret).
     const auth = Buffer.from(`${KEY_ID}:${KEY_SECRET}`).toString("base64");
@@ -57,13 +61,14 @@ export default async function handler(req, res) {
           customer: (customer?.name || "").slice(0, 100),
           phone: (customer?.phone || "").slice(0, 20),
           promo: discount ? String(promoCode) : "",
+          shipping: String(shipping),
         },
       }),
     });
     const order = await rzpRes.json();
     if (!rzpRes.ok) { res.status(502).json({ error: order?.error?.description || "Razorpay order failed" }); return; }
 
-    res.status(200).json({ orderId: order.id, amount, keyId: KEY_ID });
+    res.status(200).json({ orderId: order.id, amount, shipping, keyId: KEY_ID });
   } catch (e) {
     res.status(500).json({ error: e.message || "Server error" });
   }

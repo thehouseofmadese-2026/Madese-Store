@@ -69,7 +69,7 @@ const orgLd = [{
 html = html.replace("</head>", () => `<script type="application/ld+json">${JSON.stringify(orgLd).replace(/</g, "\\u003c")}</script>\n</head>`);
 
 /* ── 3. copy the plain static files ── */
-for (const f of ["favicon-256.png", "favicon.ico", "og-image.png", "robots.txt", ...readdirSync(ROOT).filter(n => /^google[0-9a-f]+.html$/.test(n))]) {
+for (const f of ["favicon-256.png", "favicon.ico", "og-image.png", "robots.txt", "shipping.json", ...readdirSync(ROOT).filter(n => /^google[0-9a-f]+.html$/.test(n))]) {
   if (existsSync(join(ROOT, f))) copyFileSync(join(ROOT, f), join(OUT, f));
 }
 writeFileSync(join(OUT, "index.html"), html);
@@ -216,6 +216,10 @@ writeFileSync(join(OUT, "llms.txt"), llms);
 /* ── 7. Google Merchant Center product feed ── */
 const x = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const categoryMap = { Lamps: "Home & Garden > Lighting > Lamps", Homemaker: "Home & Garden > Household Supplies" };
+// Per-item shipping (one unit, no promo) from shipping.json — same rule checkout charges, so Merchant Center matches the site.
+let SHIP = { flat: 79, freeAbove: 999, bulkyExtra: {} };
+try { SHIP = { ...SHIP, ...JSON.parse(readFileSync(join(ROOT, "shipping.json"), "utf8")) }; } catch (e) {}
+const shipFor = p => (SHIP.freeAbove > 0 && p.price >= SHIP.freeAbove) ? 0 : (Number(SHIP.flat) || 0) + (Number((SHIP.bulkyExtra || {})[p.id]) || 0);
 const feedItem = p => {
   const imgs = [p.img, ...(p.gallery || [])].filter(Boolean).map(abs);
   const onSale = p.mrp > p.price;
@@ -227,6 +231,7 @@ const feedItem = p => {
     imgs[0] && `<g:image_link>${x(imgs[0])}</g:image_link>`,
     ...imgs.slice(1, 10).map(u => `<g:additional_image_link>${x(u)}</g:additional_image_link>`),
     `<g:availability>in_stock</g:availability>`,
+    `<g:shipping><g:country>IN</g:country><g:price>${shipFor(p).toFixed(2)} INR</g:price></g:shipping>`,
     `<g:price>${Number(onSale ? p.mrp : p.price).toFixed(2)} INR</g:price>`,
     onSale && `<g:sale_price>${Number(p.price).toFixed(2)} INR</g:sale_price>`,
     `<g:brand>${x(BRAND)}</g:brand>`,

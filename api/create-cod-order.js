@@ -10,6 +10,8 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
 import { baseId, summarizeCustomizations, insertOrder } from "./_cartHelpers.js";
+import { shippingCharges } from "./_shipping.js";
+import { pushOrder, addSrItem } from "./_shiprocket.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 let coupons = [];
 try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) {}
@@ -23,20 +25,25 @@ export default async function handler(req, res) {
     if (!customer?.name || !customer?.phone || !customer?.address) { res.status(400).json({ error: "Missing customer details" }); return; }
 
     // Recompute the amount from SERVER-side prices — same rule as online checkout.
-    let total = 0; const lineItems = [];
+    let total = 0; const lineItems = []; const srItems = [];
     for (const [id, qtyRaw] of Object.entries(cart)) {
       const qty = Math.max(1, Math.min(50, parseInt(qtyRaw, 10) || 0));
       const p = products.find(x => x.id === baseId(id));
       if (!p) { res.status(400).json({ error: `Unknown product: ${id}` }); return; }
       total += p.price * qty;
       lineItems.push(`${p.name} x${qty}`);
+      addSrItem(srItems, p, qty);
     }
     const { note: customization_note, photoUrl: customization_photo_url } = summarizeCustomizations(customizations);
+    const subtotal = total;
     if (promoCode) {
       const c = coupons.find(x => x.code.toUpperCase() === String(promoCode).toUpperCase());
       if (c) total = Math.max(0, total - Math.round(total * c.percent / 100));
     }
     if (total <= 0) { res.status(400).json({ error: "Invalid order" }); return; }
+    const discount = subtotal - total;
+    const { shipping, codFee } = shippingCharges(cart, subtotal, true);
+    total += shipping + codFee;
 
     const codRef = "COD" + Date.now();
     const customer_id = await resolveCustomerId(access_token);
@@ -69,7 +76,13 @@ export default async function handler(req, res) {
       }
     }
 
-    res.status(200).json({ ok: true, ref: codRef, total, dbSaved, dbError });
+    // Drop it into Shiprocket's "New orders" list (nothing ships until you click Ship there,
+    // so you still confirm COD orders on WhatsApp first). Never blocks the customer.
+    const shiprocket = await pushOrder({ orderId: codRef, customer, items: srItems, paymentMethod: "cod",
+      subTotal: subtotal - discount, discount, shipping, codFee });
+    if (!shiprocket.pushed) console.warn("Shiprocket push skipped/failed:", shiprocket.error);
+
+    res.status(200).json({ ok: true, ref: codRef, total, shipping, codFee, dbSaved, dbError, shiprocket: shiprocket.pushed });
   } catch (e) {
     res.status(500).json({ error: e.message || "Server error" });
   }

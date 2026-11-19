@@ -1,0 +1,10 @@
+{
+  "_help": "Shipping rules for checkout. The server charges from this file and the cart reads it too, so change numbers here only. flat = shipping charge per order in rupees. freeAbove = cart value (before promo discount) at which shipping becomes free; 0 turns free shipping off. codFee = extra charge for Cash on Delivery orders. bulkyExtra = extra rupees per unit for big-box products, keyed by product id, e.g. {\"facet-wall\": 60}; not charged when shipping is free. pickupPincode / pickupLocation must match your pickup address in Shiprocket (Settings > Pickup Addresses; pickupLocation is its nickname, exactly as written there). defaultBox = typical parcel size in cm and weight in kg, sent to Shiprocket with each order.",
+  "flat": 79,
+  "freeAbove": 999,
+  "codFee": 49,
+  "bulkyExtra": {},
+  "pickupPincode": "416115",
+  "pickupLocation": "Primary",
+  "defaultBox": { "length": 15, "breadth": 15, "height": 10, "weight": 0.4 }
+}

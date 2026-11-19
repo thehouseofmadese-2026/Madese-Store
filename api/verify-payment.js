@@ -11,6 +11,8 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
 import { baseId, summarizeCustomizations, insertOrder } from "./_cartHelpers.js";
+import { shippingCharges } from "./_shipping.js";
+import { pushOrder, addSrItem } from "./_shiprocket.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
 let coupons = [];
 try { coupons = JSON.parse(readFileSync(join(process.cwd(), "coupons.json"), "utf-8")); } catch (e) {}
@@ -34,17 +36,21 @@ export default async function handler(req, res) {
     // Recompute the trustworthy total again from server prices for the record —
     // and apply the same coupon logic used at order-creation time, so the
     // total we SAVE matches the amount that was actually CHARGED.
-    let total = 0; const lineItems = [];
+    let total = 0; const lineItems = []; const srItems = [];
     for (const [id, qtyRaw] of Object.entries(cart || {})) {
       const qty = Math.max(1, parseInt(qtyRaw, 10) || 0);
       const p = products.find(x => x.id === baseId(id));
-      if (p) { total += p.price * qty; lineItems.push(`${p.name} x${qty}`); }
+      if (p) { total += p.price * qty; lineItems.push(`${p.name} x${qty}`); addSrItem(srItems, p, qty); }
     }
     const { note: customization_note, photoUrl: customization_photo_url } = summarizeCustomizations(customizations);
+    const subtotal = total;
     if (promoCode) {
       const c = coupons.find(x => x.code.toUpperCase() === String(promoCode).toUpperCase());
       if (c) total = Math.max(0, total - Math.round(total * c.percent / 100));
     }
+    const discount = subtotal - total;
+    const { shipping } = shippingCharges(cart, subtotal, false);
+    total += shipping;
 
     // If the customer was logged in, link this order to their account.
     // Never lets an account-linking problem block the actual order.
@@ -69,7 +75,15 @@ export default async function handler(req, res) {
       }).catch(() => {}); // payment already verified; a DB hiccup shouldn't fail the customer
     }
 
-    res.status(200).json({ verified: true, payment_id: razorpay_payment_id });
+    // Drop the paid order into Shiprocket's "New orders" list. Never fails the customer.
+    let shiprocket = { pushed: false };
+    if (srItems.length) {
+      shiprocket = await pushOrder({ orderId: razorpay_order_id, customer, items: srItems, paymentMethod: "prepaid",
+        subTotal: subtotal - discount, discount, shipping });
+      if (!shiprocket.pushed) console.warn("Shiprocket push skipped/failed:", shiprocket.error);
+    }
+
+    res.status(200).json({ verified: true, payment_id: razorpay_payment_id, shiprocket: shiprocket.pushed });
   } catch (e) {
     res.status(500).json({ error: e.message || "Server error" });
   }
