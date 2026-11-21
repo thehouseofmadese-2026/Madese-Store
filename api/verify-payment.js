@@ -10,7 +10,7 @@ import crypto from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
-import { baseId, summarizeCustomizations, insertOrder } from "./_cartHelpers.js";
+import { baseId, summarizeCustomizations, insertOrder, lineItem } from "./_cartHelpers.js";
 import { shippingCharges } from "./_shipping.js";
 import { pushOrder, addSrItem } from "./_shiprocket.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
@@ -36,11 +36,11 @@ export default async function handler(req, res) {
     // Recompute the trustworthy total again from server prices for the record —
     // and apply the same coupon logic used at order-creation time, so the
     // total we SAVE matches the amount that was actually CHARGED.
-    let total = 0; const lineItems = []; const srItems = [];
+    let total = 0; const lineItems = []; const srItems = []; const line_items = [];
     for (const [id, qtyRaw] of Object.entries(cart || {})) {
       const qty = Math.max(1, parseInt(qtyRaw, 10) || 0);
       const p = products.find(x => x.id === baseId(id));
-      if (p) { total += p.price * qty; lineItems.push(`${p.name} x${qty}`); addSrItem(srItems, p, qty); }
+      if (p) { total += p.price * qty; lineItems.push(`${p.name} x${qty}`); addSrItem(srItems, p, qty); line_items.push(lineItem(id, p, qty, customizations)); }
     }
     const { note: customization_note, photoUrl: customization_photo_url } = summarizeCustomizations(customizations);
     const subtotal = total;
@@ -65,6 +65,7 @@ export default async function handler(req, res) {
         order_id: razorpay_order_id,
         customer_id,
         items_text: lineItems.join(", "),
+        line_items,
         total,
         customer_name: (customer?.name || "").slice(0, 120),
         phone: (customer?.phone || "").slice(0, 20),

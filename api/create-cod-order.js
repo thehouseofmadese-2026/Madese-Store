@@ -9,7 +9,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveCustomerId } from "./_resolveCustomer.js";
-import { baseId, summarizeCustomizations, insertOrder } from "./_cartHelpers.js";
+import { baseId, summarizeCustomizations, insertOrder, lineItem } from "./_cartHelpers.js";
 import { shippingCharges } from "./_shipping.js";
 import { pushOrder, addSrItem } from "./_shiprocket.js";
 const products = JSON.parse(readFileSync(join(process.cwd(), "products.json"), "utf-8"));
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     if (!customer?.name || !customer?.phone || !customer?.address) { res.status(400).json({ error: "Missing customer details" }); return; }
 
     // Recompute the amount from SERVER-side prices — same rule as online checkout.
-    let total = 0; const lineItems = []; const srItems = [];
+    let total = 0; const lineItems = []; const srItems = []; const line_items = [];
     for (const [id, qtyRaw] of Object.entries(cart)) {
       const qty = Math.max(1, Math.min(50, parseInt(qtyRaw, 10) || 0));
       const p = products.find(x => x.id === baseId(id));
@@ -33,6 +33,7 @@ export default async function handler(req, res) {
       total += p.price * qty;
       lineItems.push(`${p.name} x${qty}`);
       addSrItem(srItems, p, qty);
+      line_items.push(lineItem(id, p, qty, customizations));
     }
     const { note: customization_note, photoUrl: customization_photo_url } = summarizeCustomizations(customizations);
     const subtotal = total;
@@ -55,12 +56,13 @@ export default async function handler(req, res) {
       dbError = "Supabase env vars missing on server (SUPABASE_URL / SUPABASE_SERVICE_KEY)";
     } else {
       try {
-        const { res: dbRes } = await insertOrder(SB_URL, SB_SERVICE, {
+        const { res: dbRes, errorText } = await insertOrder(SB_URL, SB_SERVICE, {
           payment_id: null,
           order_id: codRef,
           payment_method: "cod",
           customer_id,
           items_text: lineItems.join(", "),
+          line_items,
           total,
           customer_name: String(customer.name).slice(0, 120),
           phone: String(customer.phone).slice(0, 20),
@@ -70,7 +72,7 @@ export default async function handler(req, res) {
           customization_photo_url,
         });
         if (dbRes.ok) dbSaved = true;
-        else dbError = `Supabase ${dbRes.status}: ${(await dbRes.text()).slice(0, 300)}`;
+        else dbError = `Supabase ${dbRes.status}: ${String(errorText || "").slice(0, 300)}`;
       } catch (e) {
         dbError = "Fetch to Supabase failed: " + e.message;
       }
